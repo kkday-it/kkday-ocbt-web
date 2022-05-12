@@ -1,0 +1,122 @@
+.login-body {
+    background-size: cover;
+    background-position: center;
+}
+    /*    background-image: url(/images/bg_login.jpg);*/
+
+    .login-body header {
+        background: transparent;
+        position: absolute;
+    }
+
+.login-wrap {
+    padding-top: 80px;
+}
+
+    .login-wrap .board {
+        -webkit-box-shadow: 0 0 20px 10px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 0 20px 10px rgba(0, 0, 0, 0.1);
+        padding: 30px 40px;
+    }
+
+    .login-wrap h1 {
+        text-align: center;
+    }
+
+.btn-block {
+    width: 100%;
+}
+
+@media (max-width: 767px) {
+
+    body:not(.login-body) header ul.menu {
+        right: -70%;
+        width: 70%;
+    }
+
+    .login-body header ul.menu {
+        margin-top: -5px;
+        margin-right: -20px;
+    }
+
+    .login-body header .burger {
+        display: none !important;
+    }
+}
+
+@media (max-width:991px) {
+    body:not(.login-body) header ul.menu {
+        padding: 10px 20px;
+        position: fixed;
+        top: 0;
+        right: -300px;
+        width: 300px;
+        height: 100%;
+        z-index: 1000;
+        background-color: #fff;
+        text-align: left;
+        -webkit-box-shadow: 0 0 0 100vw rgba(0, 0, 0, 0);
+        box-shadow: 0 0 0 100vw rgba(0, 0, 0, 0);
+        -webkit-transition: 0.3s;
+        transition: 0.3s;
+        overflow-y: auto;
+    }
+
+        body:not(.login-body) header ul.menu.active {
+            right: 0;
+            -webkit-box-shadow: 0 0 0 100vw rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 0 100vw rgba(0, 0, 0, 0.4);
+        }
+
+        body:not(.login-body) header ul.menu .user-type {
+            background: #138184;
+            display: inline-block;
+        }
+
+        body:not(.login-body) header ul.menu > li {
+            display: block;
+            float: none;
+            margin-top: 15px;
+        }
+
+            body:not(.login-body) header ul.menu > li > a {
+                color: #333;
+                font-size: 1.6rem;
+                padding: 12px 0;
+            }
+
+            body:not(.login-body) header ul.menu > li > .btn {
+                color: #138184;
+                border-color: #138184;
+                margin-top: 15px;
+            }
+
+            body:not(.login-body) header ul.menu > li.dropdown .dropdown-menu {
+                position: relative;
+                padding-left: 30px;
+                float: none !important;
+                -webkit-box-shadow: none;
+                box-shadow: none;
+            }
+
+                body:not(.login-body) header ul.menu > li.dropdown .dropdown-menu:before {
+                    display: none;
+                }
+
+            body:not(.login-body) header ul.menu > li.member-dropdown {
+                border-bottom: 1px solid #eee;
+                margin: 0 -20px;
+                padding: 0 20px;
+            }
+
+                body:not(.login-body) header ul.menu > li.member-dropdown .dropdown-menu {
+                    display: block;
+                    padding-left: 0;
+                }
+
+                    body:not(.login-body) header ul.menu > li.member-dropdown .dropdown-menu > li > a {
+                        padding: 12px 16px;
+                        margin: 2px -10px;
+                        font-size: 1.6rem;
+                    }
+}
