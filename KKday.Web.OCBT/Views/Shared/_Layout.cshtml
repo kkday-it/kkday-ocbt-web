@@ -22,17 +22,12 @@
     <script src="~/lib/bootstrap-table/dist/locale/bootstrap-table-@(CultureInfo.CurrentCulture).js"></script>
     <script src="~/lib/bootstrap-validator/dist/js/bootstrapValidator.js" asp-append-version="true"></script>
     <script src="~/lib/bootstrap-validator/dist/js/language/@(CultureInfo.CurrentCulture).js" asp-append-version="true"></script>
+    <script src="@Url.Content("~/js/vue.js")" asp-append-version="true"></script>
     <script src="~/js/moment.js"></script>
     <script src="~/js/moment-timezone.min.js" asp-append-version="true"></script>
     <script src="~/js/moment-timezone-with-data.min.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @RenderSection("Scripts", required: false)
-    <script type="text/javascript">
-        var _root_path = '@Url.Content("~/")';
-        var _culture = '@CultureInfo.CurrentCulture.ToString()';
-        $(function () {
-        });
-    </script>
 </head>
 <body>
     <header>
@@ -44,26 +39,53 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
+                    <ul id="layout-bar" class="navbar-nav flex-grow-1">
+                        <template v-if="acct != ''">
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            </li>
+                        </template>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                @(CultureInfo.CurrentCulture.ToString().ToLower().Contains("zh-tw") ? "繁體中文" : (CultureInfo.CurrentCulture.ToString().ToLower().Contains("en-us") ? "English" : "繁體中文"))
+                                {{CultureInfo}}
                             </a>
                             <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                                 <a class="dropdown-item" href="@Url.Content("~/Locale/Index/zh-tw")">繁體中文</a>
                                 <a class="dropdown-item" href="@Url.Content("~/Locale/Index/en-us")">English</a>
                             </div>
                         </li>
+                        <li class="nav-item dropdown" v-if="name !=''">
+                            <button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="background-color: #FFB400;">
+                                {{name}}
+                            </button>
+                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                <a href="@Url.Content("~/Login/LogOut")" class="dropdown-item">@localizer["Logout"]</a>
+                            </div>
+                        </li>
                     </ul>
                 </div>
             </div>
         </nav>
+        <script type="text/javascript">
+            var _root_path = '@Url.Content("~/")';
+            var _culture = '@CultureInfo.CurrentCulture.ToString()';
+            new Vue({
+                el: '#layout-bar',
+                data: {
+                    acct: '@User.FindFirst("Account")?.Value',
+                    name: '@Html.Raw(User.FindFirst("Name")?.Value)',
+                    culture: '@CultureInfo.CurrentCulture.ToString().ToLower()'
+                },
+                computed: {
+                    CultureInfo() {
+                        return this.culture == "zh-tw" ? "繁體中文" : "English";
+                    }
+                }
+            });
+        </script>
     </header>
     <div class="container">
         <main role="main" class="pb-3">

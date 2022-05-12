@@ -57,6 +57,7 @@ namespace KKday.Web.OCBT.Controllers
                     {
                         new Claim("Account", account.userInfo.email),
                         new Claim("UUID", account.userInfo.userUuid),
+                        new Claim("Name", account.userInfo.userName),
                         new Claim("GuidKey", rq.guid_key),
                         new Claim("IdentityType", "KKDAY"),
                         new Claim("Ver", Website.Instance.PrincipleVersion), // 帶入當前ClaimPriciple版號
