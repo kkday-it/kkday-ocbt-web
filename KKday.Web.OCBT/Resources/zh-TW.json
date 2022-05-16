@@ -5,5 +5,8 @@
   "Email": "電子信箱",
   "Placeholder_Login_Email": "請輸入KKday電子信箱",
   "Placeholder_Login_Password": "請輸入密碼",
-  "Login_Remember_Me": "記得我"
+  "Login_Remember_Me": "記得我",
+  "Menu_Home": "首頁",
+  "Menu_Products": "商品管理與維護",
+  "CommTxt_Search": "搜尋"
 }

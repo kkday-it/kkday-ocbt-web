@@ -31,8 +31,9 @@ namespace KKday.Web.OCBT.Controllers
         public IActionResult Index()
         {
             // Claim取使用者類型
-            var userType = User.FindFirst("Account")?.Value;
-            if (userType != null) return Redirect("~/");
+            var login = User.FindFirst("Account")?.Value != null ? false : true;
+            ViewBag.LoginFlag = login;
+            if (!login) return Redirect("~/");
 
             return View();
         }

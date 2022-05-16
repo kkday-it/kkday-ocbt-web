@@ -1,0 +1,43 @@
+﻿@page
+@{
+    ViewBag.Title = localizer["Menu_Products"];
+}
+
+<div class="page-action">
+    <ul class="breadcrumb">
+        <li>@localizer["Menu_Home"]</li>
+        <li>@ViewBag.Title</li>
+    </ul>
+</div>
+<div class="col-md-12">
+    <div class="board">
+        <div class="page-head">
+            <h4>@ViewBag.Title</h4>
+        </div>
+        <div class="page-search">
+            <div class="row">
+                <div class="col-md-3 form-group">
+                    <label>母單商品編號</label>
+                    <input class="form-control" type="text" />
+                </div>
+                <div class="col-md-3 form-group">
+                    <label>母單套餐編號</label>
+                    <input class="form-control" type="text" />
+                </div>
+                <div class="col-md-3 form-group">
+                    <label>子單商品編號</label>
+                    <input class="form-control" type="text" />
+                </div>
+                <div class="col-md-3 form-group">
+                    <label>子單套餐編號</label>
+                    <input class="form-control" type="text" />
+                </div>
+            </div>
+            <div class="row justify-content-end">
+                <div class="col-md-2 form-group">
+                    <button class="btn btn-primary" type="button" style="margin-top: 0px;">@localizer["CommTxt_Search"]</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

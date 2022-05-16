@@ -22,6 +22,7 @@
     <None Remove="Proxy\" />
     <None Remove="Models\Repository\" />
     <None Remove="Models\Model\DataModel\" />
+    <None Remove="Views\Product\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="AppCode\" />
@@ -33,6 +34,7 @@
     <Folder Include="Proxy\" />
     <Folder Include="Models\Repository\" />
     <Folder Include="Models\Model\DataModel\" />
+    <Folder Include="Views\Product\" />
   </ItemGroup>
   <ItemGroup>
     <Content Remove="wwwroot\css\pages\" />
