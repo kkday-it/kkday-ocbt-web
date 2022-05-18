@@ -23,6 +23,7 @@
     <None Remove="Models\Repository\" />
     <None Remove="Models\Model\DataModel\" />
     <None Remove="Views\Product\" />
+    <None Remove="Models\Model\Product\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="AppCode\" />
@@ -35,6 +36,7 @@
     <Folder Include="Models\Repository\" />
     <Folder Include="Models\Model\DataModel\" />
     <Folder Include="Views\Product\" />
+    <Folder Include="Models\Model\Product\" />
   </ItemGroup>
   <ItemGroup>
     <Content Remove="wwwroot\css\pages\" />

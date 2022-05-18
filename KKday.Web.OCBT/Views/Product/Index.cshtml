@@ -14,30 +14,66 @@
         <div class="page-head">
             <h4>@ViewBag.Title</h4>
         </div>
-        <div class="page-search">
+        <div id="page-search" class="page-search">
             <div class="row">
-                <div class="col-md-3 form-group">
-                    <label>母單商品編號</label>
-                    <input class="form-control" type="text" />
-                </div>
-                <div class="col-md-3 form-group">
-                    <label>母單套餐編號</label>
-                    <input class="form-control" type="text" />
-                </div>
-                <div class="col-md-3 form-group">
-                    <label>子單商品編號</label>
-                    <input class="form-control" type="text" />
-                </div>
-                <div class="col-md-3 form-group">
-                    <label>子單套餐編號</label>
-                    <input class="form-control" type="text" />
-                </div>
+                <b-form-group class="col-md-3" label="母單商品編號">
+                    <b-form-input class="form-control" v-model="main_prod_oid"></b-form-input>
+                </b-form-group>
+                <b-form-group class="col-md-3" label="母單套餐編號">
+                    <b-form-input class="form-control" v-model="main_pkg_oid"></b-form-input>
+                </b-form-group>
+                <b-form-group class="col-md-3" label="子單商品編號">
+                    <b-form-input class="form-control" v-model="sub_prod_oid"></b-form-input>
+                </b-form-group>
+                <b-form-group class="col-md-3" label="子單套餐編號">
+                    <b-form-input class="form-control" v-model="sub_pkg_oid"></b-form-input>
+                </b-form-group>
             </div>
-            <div class="row justify-content-end">
-                <div class="col-md-2 form-group">
-                    <button class="btn btn-primary" type="button" style="margin-top: 0px;">@localizer["CommTxt_Search"]</button>
+            <div class="row">
+                <div class="form-group col-md-12 d-flex justify-content-end">
+                    <b-button variant="primary col-md-1 mt-0 mr-1" v-on:click="RefreshHandler">@localizer["CommTxt_Search"]</b-button>
+                    <b-button variant="outline-secondary col-md-1" v-on:click="ClearHandler">@localizer["CommTxt_Clear"]</b-button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<div class="table-responsive">
+    <div class="col-md-12">
+
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    function initData() {
+        return {
+            main_prod_oid: '',
+            main_pkg_oid: '',
+            sub_prod_oid: '',
+            sub_pkg_oid: '',
+        }
+    }
+    new Vue({
+        el: '#page-search',
+        data: function () {
+            return initData();
+        },
+        methods: {
+            RefreshHandler() {
+                FetchData(this.$data);
+            },
+            ClearHandler() {
+                Object.assign(this.$data, initData());
+            }
+        }
+    });
+
+    function FetchData(data) {
+        @*$("#table").bootstrapTable("refresh", {
+            url: _root_path + "FixedPrice/FetchFixedPriceData?filter=" + JSON.stringify({ prod_no: $("#prod_no").val(), prod_name: $("#prod_name").val().replaceAll('\'', '\'\''), currency: $("#currency").val(), comp_xid: $("#comp_xid").val().replaceAll('\'', '\'\'') })
+        });*@
+    }
+
+</script>
