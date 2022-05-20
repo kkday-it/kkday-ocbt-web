@@ -12,16 +12,15 @@ using Microsoft.AspNetCore.Mvc;
 namespace KKday.Web.OCBT.Controllers
 {
     [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme, Policy = "KKdayOnly")]
-    public class ProductController : Controller
+    public class OrderController : Controller
     {
         // GET: /<controller>/
         public IActionResult Index()
         {
             return View();
         }
-
         /// <summary>
-        /// Query Product List
+        /// Query Order List
         /// </summary>
         /// <param name="filter"></param>
         /// <param name="sort"></param>
@@ -29,7 +28,7 @@ namespace KKday.Web.OCBT.Controllers
         /// <param name="offset"></param>
         /// <param name="limit"></param>
         /// <returns></returns>
-        public IActionResult FetchProductData(string filter, string sort, string order, int offset, int limit)
+        public IActionResult FetchOrderData(string filter, string sort, string order, int offset, int limit)
         {
             var guidKey = User.FindFirst("GuidKey").Value;
             Dictionary<string, object> jsonData = new Dictionary<string, object>();
@@ -40,7 +39,7 @@ namespace KKday.Web.OCBT.Controllers
             }
             catch (Exception ex)
             {
-                Website.Instance.logger.Fatal($"FixedPrice_FetchFixedPriceData_Exception:GuidKey={guidKey}, Message={ex.Message}, StackTrace={ex.StackTrace}");
+                Website.Instance.logger.Fatal($"Order_FetchOrderData_Exception:GuidKey={guidKey}, Message={ex.Message}, StackTrace={ex.StackTrace}");
                 jsonData.Add("total", 0);
                 jsonData.Add("totalNotFiltered", 0);
                 jsonData.Add("rows", new string[] { });

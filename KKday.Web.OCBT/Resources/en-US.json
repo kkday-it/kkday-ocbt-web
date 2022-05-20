@@ -7,7 +7,8 @@
   "Placeholder_Login_Password": "Please Enter Password.",
   "Login_Remember_Me": "Remember Me",
   "Menu_Home": "Home",
-  "Menu_Products": "Products MGMT",
+  "Menu_Order": "Order MGMT",
   "CommTxt_Search": "Search",
-  "CommTxt_Clear": "Clear"
+  "CommTxt_Clear": "Clear",
+  "CommTxt_Select": "Select"
 }

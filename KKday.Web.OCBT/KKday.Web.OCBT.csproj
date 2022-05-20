@@ -35,8 +35,8 @@
     <Folder Include="Proxy\" />
     <Folder Include="Models\Repository\" />
     <Folder Include="Models\Model\DataModel\" />
-    <Folder Include="Views\Product\" />
-    <Folder Include="Models\Model\Product\" />
+    <Folder Include="Views\Order\" />
+    <Folder Include="Models\Model\Order\" />
   </ItemGroup>
   <ItemGroup>
     <Content Remove="wwwroot\css\pages\" />

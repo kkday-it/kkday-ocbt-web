@@ -1,6 +1,5 @@
-﻿@page
-@{
-    ViewBag.Title = localizer["Menu_Products"];
+﻿@{
+    ViewBag.Title = localizer["Menu_Order"];
 }
 
 <div class="page-action">
@@ -22,11 +21,23 @@
                 <b-form-group class="col-md-3" label="母單套餐編號">
                     <b-form-input class="form-control" v-model="main_pkg_oid"></b-form-input>
                 </b-form-group>
+                <b-form-group class="col-md-3" label="母單訂單 Oid">
+                    <b-form-input class="form-control" v-model="main_order_oid"></b-form-input>
+                </b-form-group>
+                <b-form-group class="col-md-3" label="母單狀態">
+                    <b-form-select class="form-control" v-model="main_status" :options="main_status_options"></b-form-select>
+                </b-form-group>
                 <b-form-group class="col-md-3" label="子單商品編號">
                     <b-form-input class="form-control" v-model="sub_prod_oid"></b-form-input>
                 </b-form-group>
                 <b-form-group class="col-md-3" label="子單套餐編號">
                     <b-form-input class="form-control" v-model="sub_pkg_oid"></b-form-input>
+                </b-form-group>
+                <b-form-group class="col-md-3" label="子單訂單 Oid">
+                    <b-form-input class="form-control" v-model="sub_order_oid"></b-form-input>
+                </b-form-group>
+                <b-form-group class="col-md-3" label="子單狀態">
+                    <b-form-select class="form-control" v-model="sub_status" :options="sub_status_options"></b-form-select>
                 </b-form-group>
             </div>
             <div class="row">
@@ -48,12 +59,37 @@
 <script type="text/javascript">
 
     function initData() {
-        return {
+        var data = {
             main_prod_oid: '',
             main_pkg_oid: '',
+            main_order_oid: '',
             sub_prod_oid: '',
             sub_pkg_oid: '',
-        }
+            sub_order_oid: '',
+            main_status: null,
+            sub_status: null,
+            main_status_options: [],
+            sub_status_options: []
+        };
+        var options = [
+            { value: null, text: '@localizer["CommTxt_Select"]' },
+            { value: 'NW', text: '成立' },
+            { value: 'PROCESS', text: '準備預定中' },
+            { value: 'BOOKING_FAIL', text: '成立訂單失敗' },
+            { value: 'BOOKING_OK', text: '已成立訂單' },
+            { value: 'VOUCHER_FAIL', text: '憑證失敗' },
+            { value: 'VOUCHER_OK', text: '憑證ＯＫ' },
+            { value: 'NOTICE_FAIL', text: '回報失敗' },
+            { value: 'NOTICE_OK', text: '回報ＯＫ' },
+            { value: 'CB_FAIL', text: '取憑證失敗' },
+        ];
+        data.main_status_options = options;
+        data.main_status_options.push({ value: 'GL', text: '已完成' });
+        data.sub_status_options = options;
+        data.sub_status_options.push(
+            { value: 'CB', text: '取憑證中' }, { value: 'UPLOAD_FAIL', text: '上傳憑證失敗' }, { value: 'DOWNLOAD_FAIL', text: '下載憑證失敗' }, { value: 'GL', text: '已完成' }
+        );
+        return data;
     }
     new Vue({
         el: '#page-search',

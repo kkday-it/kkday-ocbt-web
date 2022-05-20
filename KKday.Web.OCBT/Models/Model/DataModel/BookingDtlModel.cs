@@ -12,7 +12,8 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
         public string sku_oid { get; set; }             // 子單sku_oid
         public int booking_qty { get; set; }            // 規則上欲訂購的數量
         public int real_booking_qty { get; set; }       // 實際訂購的數量
-        public string booking_dtl_status { get; set; }  // 狀態
+        public string booking_dtl_order_status { get; set; }    // 訂單狀態
+        public string booking_dtl_voucher_status { get; set; }  // 憑證狀態
         public int order_master_oid { get; set; }       // 購物車order_master_oid
         public string order_master_mid { get; set; }    // 購物車order_master_mid
         public int order_oid { get; set; }              // 子單order_oid
