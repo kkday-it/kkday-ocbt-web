@@ -5,5 +5,10 @@
   "Email": "Email",
   "Placeholder_Login_Email": "Please Enter KKday Email Address.",
   "Placeholder_Login_Password": "Please Enter Password.",
-  "Login_Remember_Me": "Remember Me"
+  "Login_Remember_Me": "Remember Me",
+  "Menu_Home": "Home",
+  "Menu_Order": "Order MGMT",
+  "CommTxt_Search": "Search",
+  "CommTxt_Clear": "Clear",
+  "CommTxt_Select": "Select"
 }

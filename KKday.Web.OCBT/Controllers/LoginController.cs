@@ -31,8 +31,9 @@ namespace KKday.Web.OCBT.Controllers
         public IActionResult Index()
         {
             // Claim取使用者類型
-            var userType = User.FindFirst("Account")?.Value;
-            if (userType != null) return Redirect("~/");
+            var login = User.FindFirst("Account")?.Value != null ? false : true;
+            ViewBag.LoginFlag = login;
+            if (!login) return Redirect("~/");
 
             return View();
         }
@@ -57,6 +58,7 @@ namespace KKday.Web.OCBT.Controllers
                     {
                         new Claim("Account", account.userInfo.email),
                         new Claim("UUID", account.userInfo.userUuid),
+                        new Claim("Name", account.userInfo.userName),
                         new Claim("GuidKey", rq.guid_key),
                         new Claim("IdentityType", "KKDAY"),
                         new Claim("Ver", Website.Instance.PrincipleVersion), // 帶入當前ClaimPriciple版號
