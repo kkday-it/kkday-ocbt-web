@@ -1,0 +1,206 @@
+﻿.member-wrap {
+    background: #f4f4f4;
+}
+
+@media (max-width: 767px) {
+    .member-wrap {
+        padding-top: 50px;
+        padding-bottom: 0;
+    }
+}
+
+.member-wrap .board {
+    border: 0;
+    margin-top: 0;
+    /*min-height: 518px;*/
+    display: inline-block;
+    width: 100%;
+}
+
+@media (max-width: 767px) {
+    .member-wrap .board {
+    /* margin: 0 -15px;*/
+    }
+}
+
+.member-wrap .board .sub-title {
+    margin: 20px 0;
+}
+
+    .member-wrap .board .sub-title:before {
+        content: '';
+        display: inline-block;
+        width: 4px;
+        height: 20px;
+        margin-right: 10px;
+        background-color: #333;
+        vertical-align: sub;
+    }
+
+.member-wrap .board .card {
+    border: 1px solid #eaeaea;
+    margin-bottom: 20px;
+}
+
+.member-wrap thead th {
+    background-color: #EEEEEE;
+}
+
+.member-wrap .table-btns {
+    margin-bottom: 10px;
+}
+
+    .member-wrap .table-btns .btn {
+        margin-right: 5px;
+    }
+
+.page-head, .page-search {
+    border-bottom: 1px solid #eaeaea;
+    margin: 0 -20px 20px -20px;
+    padding: 0 20px;
+}
+
+    .page-head h1 {
+        margin-top: 0;
+        margin-bottom: 20px;
+    }
+
+.page-tab {
+    border: 0;
+}
+
+    .page-tab > li {
+        border: 0;
+    }
+
+        .page-tab > li > a:not(.active):hover {
+            border-bottom: 3px solid rgba(19, 129, 132, 0.5);
+        }
+
+        .page-tab > li.active {
+            border-bottom: 3px solid #138184;
+        }
+
+        .page-tab > li > a,
+        .page-tab > li > a:hover,
+        .page-tab > li > a:focus {
+            color: #999;
+            font-weight: bold;
+            border: 0;
+            background-color: transparent;
+            padding: 10px 20px;
+            margin: 0;
+            position: relative;
+        }
+
+        .page-tab > li,
+        .page-tab > li.active > a,
+        .page-tab > li.active > a:hover,
+        .page-tab > li.active > a:focus {
+            color: #138184;
+            border: 0;
+        }
+
+.page-search [class*=col-] .btn-primary {
+    margin-top: 30px;
+    width: 100%;
+}
+
+@media (max-width: 767px) {
+    .page-search [class*=col-] .btn-primary {
+        margin-top: 0;
+        margin-bottom: 20px;
+        width: auto;
+    }
+}
+
+.page-search .form-btns {
+    margin-bottom: 20px;
+}
+
+ul.review-step {
+    height: 50px;
+    margin: 40px 0;
+    border-radius: 50px;
+    background-color: #eee;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -ms-flex-pack: distribute;
+    justify-content: space-around;
+    overflow: hidden;
+}
+
+    ul.review-step > li {
+        color: #666;
+        width: 25%;
+        height: 100%;
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-align: center;
+        -ms-flex-align: center;
+        align-items: center;
+        -webkit-box-pack: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+        position: relative;
+    }
+
+        ul.review-step > li.active {
+            border-radius: 50px;
+            background-color: #138184;
+            color: #fff;
+        }
+
+        ul.review-step > li.pass {
+            background: #94DFE5;
+            color: #fff;
+        }
+
+            ul.review-step > li.pass:after {
+                content: '';
+                display: block;
+                width: 20px;
+                height: 100%;
+                background: #94DFE5;
+                position: absolute;
+                top: 0;
+                left: 100%;
+            }
+
+    ul.review-step + .form-btns {
+        margin: 40px 0;
+        text-align: center;
+    }
+
+.cache-time {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+    .cache-time .edit-time {
+        border-bottom: 1px dashed #138184;
+        padding: 0 5px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .cache-time .edit-time-input {
+        border-radius: 4px;
+        border: 1px solid #ddd;
+        padding: 5px;
+        width: 50px;
+    }
+
+    .cache-time a {
+        font-weight: bold;
+        text-decoration: none;
+        margin-left: 4px;
+    }
+
+/*# sourceMappingURL=../sourcemaps/pages/member.css.map */
