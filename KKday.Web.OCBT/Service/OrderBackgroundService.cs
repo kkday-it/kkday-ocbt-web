@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using KKday.Web.B2D.N3.AppCode;
+using KKday.Web.OCBT.AppCode;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 

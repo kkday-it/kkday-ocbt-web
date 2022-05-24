@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using KKday.Web.B2D.N3.AppCode;
 using KKday.Web.OCBT.AppCode;
 using KKday.Web.OCBT.Models.Repository;
 using KKday.Web.OCBT.Proxy;
@@ -124,6 +123,7 @@ namespace KKday.Web.OCBT
             #region Dependency Injection Regisgter --begin
             services.AddSingleton<OAuthProxy>();
             services.AddSingleton<OrderRepository>();
+            services.AddSingleton<ComboSupplierRepository>();
             services.AddSingleton<IRedisHelper, RedisHelper>();
             #endregion Dependency Injection Regisgter -- end
 
