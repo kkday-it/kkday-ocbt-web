@@ -14,9 +14,11 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
         public string booking_mst_order_status { get; set; }          // 訂單狀態
         public string booking_mst_voucher_status { get; set; }        // 憑證狀態
         public int voucher_deadline { get; set; }                     // 憑證最長等待的時間 （從 product_model 取出）
+        public bool is_callback { get; set; }                         // 是否 callback
+        public bool is_back { get; set; }                             // 是否已通知母單BACK
         public string create_user { get; set; }
         public DateTime create_datetime { get; set; }
         public string modify_user { get; set; }
-        public DateTime modify_datetime { get; set; }
+        public DateTime? modify_datetime { get; set; }
     }
 }
