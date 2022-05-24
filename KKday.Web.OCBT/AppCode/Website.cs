@@ -7,8 +7,9 @@ using System.Collections;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using log4net.Config;
-using System.Reflection; 
-  
+using System.Reflection;
+using Npgsql;
+
 namespace KKday.Web.OCBT.AppCode
 {
     public sealed class Website
@@ -35,6 +36,11 @@ namespace KKday.Web.OCBT.AppCode
         {
             get { return "1.0.0.1"; } // O.C.B.T 建立
         }
+        private string _OCBT_DB = "";
+        public string OCBT_DB
+        {
+            get { return _OCBT_DB; }
+        }
 
         private Website()
         {
@@ -53,13 +59,11 @@ namespace KKday.Web.OCBT.AppCode
             //NpgsqlConnection npg_conn = new NpgsqlConnection(_ERP_DB);
 
             LoadLog4netConfig();
+            LoadOCBTDBConfig();
 
             logger.Debug("StartUp....!");
 
-            // 建立資料庫連線
-            this.SqlConnectionString = config["NPGSQL_Connection"];
-            // AES加解密專用Key
-            this.AesCryptKey = config["AesCryptKey"];
+            
         }
 
         private void LoadLog4netConfig()
@@ -106,6 +110,18 @@ namespace KKday.Web.OCBT.AppCode
 
 
 
+        }
+
+        private void LoadOCBTDBConfig()
+        {
+            Console.WriteLine($"pg連線字串：{Configuration["ConnectionStrings:NpgsqlConnection"]}");
+            this._OCBT_DB = Configuration["ConnectionStrings:NpgsqlConnection"];
+
+            string szLog4NetCfgFile = string.Format("{0}\\log4net.config", Directory.GetCurrentDirectory());
+
+            _stationID = Dns.GetHostName();
+
+            NpgsqlConnection npg_conn = new NpgsqlConnection(_OCBT_DB);
         }
 
     }
