@@ -52,12 +52,86 @@
 
 <div class="table-responsive">
     <div class="col-md-12">
-
+        <table id="table" class="table-striped" style="font-size:14px;"
+               data-toggle="table"
+               data-undefined-text=""
+               data-url="@Url.Content("~/Order/FetchOrderData")"
+               data-page-size="50"
+               data-page-number="1"
+               data-side-pagination="server"
+               data-id-field="xid"
+               data-page-list="[10, 25, 50, 100, 200, All]"
+               data-pagination="true"
+               data-detail-view="true"
+               data-unique-id="booking_mst_xid">
+            <thead>
+                <tr>
+                    <th data-field="booking_mst_xid">序號</th>
+                    <th data-field="order_mid">母單 mid</th>
+                    <th data-field="order_oid">母單 oid</th>
+                    <th data-field="main_master_oid">母單 master_oid</th>
+                    <th data-field="booking_mst_order_status">母單狀態</th>
+                    <th data-field="voucher_deadline">憑證最長等待時間(分鐘)</th>
+                    <th data-field="prod_oid">產品編號</th>
+                    <th data-field="prod_name">產品名稱</th>
+                    <th data-field="package_oid">套餐編號</th>
+                    <th data-field="package_name">套餐名稱</th>
+                    <th data-field="crt_datetime">建立時間</th>
+                </tr>
+            </thead>
+        </table>
     </div>
 </div>
 
 <script type="text/javascript">
 
+    $(function () {
+        $("#table").on("expand-row.bs.table", function (e, index, row, $detail) {
+            SubTable(index, row, $detail);
+        });
+    })
+    function SubTable(index, row, $detail) {
+        var cur_table = $detail.html('<table></table>').find('table');
+        $(cur_table).bootstrapTable({
+            url: _root_path + "Order/FetchOrderDtlData?id=" + row.booking_mst_xid,
+            method: 'get',
+            striped: true,
+            columns: [
+                {
+                    field: 'order_mid',
+                    title: '子單 mid'
+                },
+                {
+                    field: 'order_oid',
+                    title: '子單 oid'
+                },
+                {
+                    field: 'sub_master_oid',
+                    title: '子單 master_oid'
+                },
+                {
+                    field: 'booking_dtl_order_status',
+                    title: '子單狀態'
+                },
+                {
+                    field: 'prod_oid',
+                    title: '產品編號'
+                },
+                {
+                    field: '',
+                    title: '產品名稱'
+                },
+                {
+                    field: 'package_oid',
+                    title: '套餐編號'
+                },
+                {
+                    field: '',
+                    title: '套餐名稱'
+                }
+            ]
+        });
+    }
     function initData() {
         var data = {
             main_prod_oid: '',
@@ -105,11 +179,10 @@
             }
         }
     });
-
     function FetchData(data) {
-        @*$("#table").bootstrapTable("refresh", {
-            url: _root_path + "FixedPrice/FetchFixedPriceData?filter=" + JSON.stringify({ prod_no: $("#prod_no").val(), prod_name: $("#prod_name").val().replaceAll('\'', '\'\''), currency: $("#currency").val(), comp_xid: $("#comp_xid").val().replaceAll('\'', '\'\'') })
-        });*@
+        $("#table").bootstrapTable("refresh", {
+            url: _root_path + "Order/FetchOrderData?filter=" + JSON.stringify(data)
+        });
     }
 
 </script>

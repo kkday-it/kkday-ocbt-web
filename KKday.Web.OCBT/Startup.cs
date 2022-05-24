@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using KKday.Web.OCBT.AppCode;
+using KKday.Web.OCBT.Models.Repository;
 using KKday.Web.OCBT.Proxy;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
@@ -120,6 +121,7 @@ namespace KKday.Web.OCBT
 
             #region Dependency Injection Regisgter --begin
             services.AddSingleton<OAuthProxy>();
+            services.AddSingleton<OrderRepository>();
             #endregion Dependency Injection Regisgter -- end
 
             services.AddSession();
