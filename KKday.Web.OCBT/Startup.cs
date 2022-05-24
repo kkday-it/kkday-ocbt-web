@@ -4,9 +4,11 @@ using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using KKday.Web.B2D.N3.AppCode;
 using KKday.Web.OCBT.AppCode;
 using KKday.Web.OCBT.Models.Repository;
 using KKday.Web.OCBT.Proxy;
+using KKday.Web.OCBT.Service;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -122,10 +124,14 @@ namespace KKday.Web.OCBT
             #region Dependency Injection Regisgter --begin
             services.AddSingleton<OAuthProxy>();
             services.AddSingleton<OrderRepository>();
+            services.AddSingleton<IRedisHelper, RedisHelper>();
             #endregion Dependency Injection Regisgter -- end
 
             services.AddSession();
             services.AddControllersWithViews().AddViewLocalization();
+
+            //Background Service
+            services.AddHostedService<OrderBackgroundService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
