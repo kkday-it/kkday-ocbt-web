@@ -188,3 +188,52 @@ body {
     width: 100%;
 }
 /* Form Validator HasError End */
+
+/* Custom Modal Start */
+.modal-dialog {
+    margin-top: 10rem;
+}
+.modal-header {
+    position: inherit;
+    background-color: inherit;
+}
+    .modal-header > .close {
+        font-size: 2rem;
+    }
+    .modal-header > .close:focus {
+        outline: inherit;
+    }
+
+.btn-add {
+    display: inline-block;
+    margin: 10px 0 20px 0;
+    font-size: 1.1rem;
+}
+
+    .btn-add, .btn-add:hover, .btn-add:focus {
+        text-decoration: none;
+    }
+
+a {
+    color: #01b0b5;
+}
+/*.icons {
+    vertical-align: middle;
+    display: inline-block;
+    margin-top: -3px;
+}
+.icon-plus {
+    font-family: 'simple-line-icons';
+    speak: none;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;*/
+    /* Better Font Rendering =========== */
+    /*-webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+.icon-plus:before {
+    content: "\e095";
+}*/

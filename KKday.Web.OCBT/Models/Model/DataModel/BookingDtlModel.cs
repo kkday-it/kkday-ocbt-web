@@ -22,6 +22,6 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
         public string create_user { get; set; }
         public DateTime create_datetime { get; set; }
         public string modify_user { get; set; }
-        public DateTime modify_datetime { get; set; }
+        public DateTime? modify_datetime { get; set; }
     }
 }
