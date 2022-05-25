@@ -10,7 +10,7 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
     }
 
 
-    public class ComboSupResponseModel : ResponseJavaModel
+    public class ComboSupResponseModel : ResponseJson
     {
         public ComboSupResponseDataModel data { get; set; }   
     }
