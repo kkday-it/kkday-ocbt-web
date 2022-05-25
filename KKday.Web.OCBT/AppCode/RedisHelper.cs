@@ -5,9 +5,8 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.Extensions.Configuration;
-using KKday.Web.OCBT.AppCode;
 
-namespace KKday.Web.B2D.N3.AppCode
+namespace KKday.Web.OCBT.AppCode
 {
     public interface IRedisHelper
     {
