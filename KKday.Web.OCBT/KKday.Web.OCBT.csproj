@@ -43,8 +43,7 @@
     <Folder Include="Views\Order\" />
     <Folder Include="Models\Model\Order\" />
     <Folder Include="Service\" />
-    <Folder Include="Area\" />
-    <Folder Include="Area\V1\" />
+    <Folder Include="Controllers\V1\" />
   </ItemGroup>
   <ItemGroup>
     <Content Remove="wwwroot\css\pages\" />

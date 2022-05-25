@@ -10,7 +10,7 @@ using KKday.Web.OCBT.Models.Repository;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
-namespace KKday.Web.OCBT.Area.V1
+namespace KKday.Web.OCBT.V1
 {
     [Route("api/v1/[controller]")]
     public class ComboBookingController : Controller
@@ -24,10 +24,11 @@ namespace KKday.Web.OCBT.Area.V1
         }
         // GET: api/values
         [HttpPost("CrtOrder")]
-        public ResponseJavaModel CrtOrder([FromBody] BookingRequestModel request)
+        public ResponseJson CrtOrder([FromBody] BookingRequestModel request)
         {
             _redisHelper.Push("ComboBookingKeys", JsonConvert.SerializeObject(request));//將Java資料傳入redisQueue
-            return new ResponseJavaModel {
+            return new ResponseJson
+            {
                 metadata=new ResponseMetaModel {
                     status= "1000",
                     description="正確無誤"
@@ -36,7 +37,7 @@ namespace KKday.Web.OCBT.Area.V1
         }
 
         [HttpPost("GetComboSupplierList")]
-        public ResponseJavaModel GetComboSupplierList([FromBody] ComboSupRequestModel rq)
+        public ResponseJson GetComboSupplierList([FromBody] ComboSupRequestModel rq)
         {
             try
             {
