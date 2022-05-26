@@ -7,6 +7,7 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
     {
         public string request_uuid { get; set; }
         public string source { get; set; }
+        public JavaOrderModel order { get; set; }
     }
     public class JavaOrderModel
     {
