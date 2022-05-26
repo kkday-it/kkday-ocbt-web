@@ -73,7 +73,7 @@
                             <th data-field="prod_name">產品名稱</th>
                             <th data-field="package_oid">套餐編號</th>
                             <th data-field="package_name">套餐名稱</th>
-                            <th data-field="crt_datetime">建立時間</th>
+                            <th data-formatter="ColumnUser">建立時間</th>
                         </tr>
                     </thead>
                 </table>
@@ -144,7 +144,16 @@
             main_status_options: [],
             sub_status_options: []
         };
-        var options = [
+        data.main_status_options = initOption();
+        data.main_status_options.push({ value: 'GL', text: '已完成' });
+        data.sub_status_options = initOption();
+        data.sub_status_options.push(
+            { value: 'CB', text: '取憑證中' }, { value: 'UPLOAD_FAIL', text: '上傳憑證失敗' }, { value: 'DOWNLOAD_FAIL', text: '下載憑證失敗' }, { value: 'GL', text: '已完成' }
+        );
+        return data;
+    }
+    function initOption() {
+        return options = [
             { value: null, text: '@localizer["CommTxt_Select"]' },
             { value: 'NW', text: '成立' },
             { value: 'PROCESS', text: '準備預定中' },
@@ -156,13 +165,6 @@
             { value: 'NOTICE_OK', text: '回報ＯＫ' },
             { value: 'CB_FAIL', text: '取憑證失敗' },
         ];
-        data.main_status_options = options;
-        data.main_status_options.push({ value: 'GL', text: '已完成' });
-        data.sub_status_options = options;
-        data.sub_status_options.push(
-            { value: 'CB', text: '取憑證中' }, { value: 'UPLOAD_FAIL', text: '上傳憑證失敗' }, { value: 'DOWNLOAD_FAIL', text: '下載憑證失敗' }, { value: 'GL', text: '已完成' }
-        );
-        return data;
     }
     new Vue({
         el: '#page-search',
@@ -182,6 +184,13 @@
         $("#table").bootstrapTable("refresh", {
             url: _root_path + "Order/FetchOrderData?filter=" + JSON.stringify(data)
         });
+    }
+    @* User Format user+date *@
+    function ColumnUser(value, row, index) {
+        return [
+            '<span>' + (row.create_user == null ? "-" : row.create_user) + '</span> <br/>',
+            '<span>' + (row.create_user == null ? "" : row.create_datetime.substring(0, 10)) + '</span>'
+        ].join('');
     }
 
 </script>

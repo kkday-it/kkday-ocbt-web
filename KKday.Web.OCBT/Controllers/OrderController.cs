@@ -44,8 +44,8 @@ namespace KKday.Web.OCBT.Controllers
             {
                 var rs = _orderRepos.FetchOrderMstData(filter, sort, order, offset, limit);
 
-                jsonData.Add("total", rs.count);
-                jsonData.Add("totalNotFiltered", rs.count);
+                jsonData.Add("total", rs.total_count);
+                jsonData.Add("totalNotFiltered", rs.total_count);
                 jsonData.Add("rows", rs.order_mst_list);
             }
             catch (Exception ex)
