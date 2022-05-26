@@ -86,8 +86,8 @@ VALUES(:order_mid,:order_oid,:prod_oid,:booking_model,:booking_mst_order_status,
             {
                 ResponseJavaModel callbackData = new ResponseJavaModel
                 {
-                    apiKey = Website.Instance.Configuration["KKAPI_INPUT:API_KEY"],
-                    userOid = Website.Instance.Configuration["KKAPI_INPUT:USER_OID"],
+                    apiKey = Website.Instance.Configuration["KKdayAPI:Body:ApiKey"],
+                    userOid = Website.Instance.Configuration["KKdayAPI:Body:UserOid"],
                     locale = "zh-tw",
                     ipaddress = GetLocalIPAddress(),
                     json = jsonData
