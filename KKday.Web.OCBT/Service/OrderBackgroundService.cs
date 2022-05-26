@@ -24,6 +24,7 @@ namespace KKday.Web.OCBT.Service
                 {
                     var keyforOrder = "ComboBookingKeys";
                     var msg = _redisHelper.Pop(keyforOrder);
+                    //ComboBookingFlow(msg);
                     return Task.CompletedTask;
                 }
             }
