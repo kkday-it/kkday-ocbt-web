@@ -44,6 +44,7 @@
     <Folder Include="Models\Model\Order\" />
     <Folder Include="Service\" />
     <Folder Include="Controllers\V1\" />
+    <Folder Include="Models\Model\Product\" />
   </ItemGroup>
   <ItemGroup>
     <Content Remove="wwwroot\css\pages\" />

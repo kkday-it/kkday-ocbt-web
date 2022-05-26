@@ -4,6 +4,13 @@ using KKday.Web.OCBT.AppCode;
 using KKday.Web.OCBT.Models.Model.DataModel;
 using Npgsql;
 using System.Linq;
+using Newtonsoft.Json;
+using System.Net;
+using System.Net.Sockets;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using KKday.Web.OCBT.Proxy;
+
 namespace KKday.Web.OCBT.Models.Repository
 {
     public class ComboBookingRepository
@@ -72,9 +79,90 @@ VALUES(:order_mid,:order_oid,:prod_oid,:booking_model,:booking_mst_order_status,
                 throw ex;
             }
         }
-        public void CallBackJava(ResponseJson json)
+        
+        public void CallBackJava(ResponseJson jsonData)
         {
+            try
+            {
+                ResponseJavaModel callbackData = new ResponseJavaModel
+                {
+                    apiKey = Website.Instance.Configuration["KKdayAPI:Body:ApiKey"],
+                    userOid = Website.Instance.Configuration["KKdayAPI:Body:UserOid"],
+                    locale = "zh-tw",
+                    ipaddress = GetLocalIPAddress(),
+                    json = jsonData
 
+                };
+                string url = "";
+                string result= CommonProxy.Post(url, JsonConvert.SerializeObject(callbackData));
+            }
+            catch (Exception ex)
+            {
+                Website.Instance.logger.Info($"CallBackJava Error message:{ex.Message},stacktrace:{ex.StackTrace}");
+                ResponseJavaModel callbackData = new ResponseJavaModel
+                {
+                    apiKey = Website.Instance.Configuration["KKAPI_INPUT:API_KEY"],
+                    userOid = Website.Instance.Configuration["KKAPI_INPUT:USER_OID"],
+                    locale = "zh-tw",
+                    ipaddress = GetLocalIPAddress(),
+                    json = new ResponseJson
+                    {
+                        metadata=new ResponseMetaModel
+                        {
+                            status="9999",
+                            description="系統異常"
+                        }
+                    }
+
+                };
+                string url = "";
+                string result = CommonProxy.Post(url, JsonConvert.SerializeObject(callbackData));
+
+            }
+        }
+        public void ComboBookingFlow(string queue)
+        {
+            try
+            {
+                //將queue轉成dataModel
+                var queueModel = JsonConvert.DeserializeObject<BookingRequestModel>(queue);
+                #region 查找母單資訊
+                var getMstModel = GetBookingMstData(new BookingMstModel
+                {
+                    order_mid = queueModel.order.orderMid
+                });
+                #endregion
+                #region 判斷母單資訊
+
+                #endregion
+            }
+            catch (Exception ex)
+            {
+                Website.Instance.logger.Info($"ComboBookingFlow errpr {queue} error:{ex.Message},{ex.StackTrace}");
+            }
+            #region 查找母單
+
+            #endregion
+        }
+
+        public string GetLocalIPAddress()
+        {
+            try
+            {
+                var host = Dns.GetHostEntry(Dns.GetHostName());
+                foreach (var ip in host.AddressList)
+                {
+                    if (ip.AddressFamily == AddressFamily.InterNetwork)
+                    {
+                        return ip.ToString();
+                    }
+                }
+                throw new Exception("No network adapters with an IPv4 address in the system!");
+            }
+            catch (Exception ex)
+            {
+                return "127.0.0.1";
+            }
         }
 
     }
