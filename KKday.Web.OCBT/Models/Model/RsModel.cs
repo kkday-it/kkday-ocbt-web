@@ -8,5 +8,6 @@
         public string result { get; set; }
         public string result_message { get; set; }
         public int? count { get; set; }
+        public int? total_count { get; set; }
     }
 }

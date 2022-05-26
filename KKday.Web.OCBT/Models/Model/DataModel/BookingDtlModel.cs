@@ -6,6 +6,7 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
     public class BookingDtlModel
     {
         public int booking_dtl_xid { get; set; }        // 明細檔xid
+        public int booking_mst_xid { get; set; }        // 主檔xid
         public int prod_oid { get; set; }               // 子單prod_oid
         public int package_oid { get; set; }            // 子單package_oid
         public int item_oid { get; set; }               // 子單item_oid
