@@ -10,14 +10,14 @@ namespace KKday.Web.OCBT.Models.Model.Order
     }
     public class OrderSearch
     {
-        public string main_prod_oid { get; set; }
+        public int? main_prod_oid { get; set; }
         public string main_pkg_oid { get; set; }
-        public string main_order_oid { get; set; }
+        public int? main_order_oid { get; set; }
         public string sub_prod_oid { get; set; }
         public string sub_pkg_oid { get; set; }
         public string sub_order_oid { get; set; }
         public string main_status { get; set; }
-        public List<SelectListItem> SelectedItems { get; set; }
+        public string sub_status { get; set; }
     }
 
     public class OrderRsModel : RsModel
