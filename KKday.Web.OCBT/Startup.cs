@@ -124,7 +124,10 @@ namespace KKday.Web.OCBT
             services.AddSingleton<OAuthProxy>();
             services.AddSingleton<OrderRepository>();
             services.AddSingleton<ComboSupplierRepository>();
+            services.AddSingleton<BatchJobRepository>();
+            services.AddSingleton<ComboBookingRepository>();
             services.AddSingleton<IRedisHelper, RedisHelper>();
+            services.AddSingleton<OrderProxy>();
             #endregion Dependency Injection Regisgter -- end
 
             services.AddSession();
