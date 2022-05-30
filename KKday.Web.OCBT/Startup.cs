@@ -126,6 +126,7 @@ namespace KKday.Web.OCBT
             services.AddSingleton<OAuthProxy>();
             services.AddSingleton<OrderRepository>();
             services.AddSingleton<ComboSupplierRepository>();
+            services.AddSingleton<BatchJobRepository>();
             services.AddSingleton<ComboBookingRepository>();
             services.AddSingleton<IRedisHelper, RedisHelper>();
             //Redis
@@ -133,7 +134,8 @@ namespace KKday.Web.OCBT
             {
                 return new RedisHelper(Configuration);
             });
-
+            services.AddSingleton<OrderProxy>();
+          
             #endregion Dependency Injection Regisgter -- end
 
             // 新建由 HttpClientFactory 管制 HttpClient 的 pms_proxy, 並關閉 SSL 認證錯誤
