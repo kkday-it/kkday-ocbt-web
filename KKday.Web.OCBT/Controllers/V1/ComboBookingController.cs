@@ -37,7 +37,7 @@ namespace KKday.Web.OCBT.V1
         }
 
         [HttpPost("GetComboSupplierList")]
-        public ResponseJson GetComboSupplierList([FromBody] ComboSupRequestModel rq)
+        public ComboSupResponseModel GetComboSupplierList([FromBody] ComboSupRequestModel rq)
         {
             try
             {
@@ -57,6 +57,38 @@ namespace KKday.Web.OCBT.V1
                     {
                         status = "9999",
                         description = "異常:" + ex.Message.ToString()
+                    }
+                };
+            }
+        }
+
+
+        [HttpPost("ChkCancel")]
+        public ComboSupResponseModel ChkCancel([FromBody] ChkCancelRequestModel rq)
+        {
+            try
+            {
+                Website.Instance.logger.Info($"ComboBooking_ChkCancel_quest:{JsonConvert.SerializeObject(rq)}");
+
+                return new ComboSupResponseModel
+                {
+                    metadata = new ResponseMetaModel
+                    {
+                        status = "4002",
+                        description = "不能取消"
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                Website.Instance.logger.Fatal($"ComboBooking_ChkCancel_exception:GuidKey ={rq?.request_uuid}, Message={ex.Message}, StackTrace={ex.StackTrace}");
+
+                return new ComboSupResponseModel
+                {
+                    metadata = new ResponseMetaModel
+                    {
+                        status = "4002",
+                        description = "不能取消"
                     }
                 };
             }
