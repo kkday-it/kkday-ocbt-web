@@ -10,9 +10,10 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
     }
 
 
-    public class ComboSupResponseModel : ResponseJson
+    public class ComboSupResponseModel 
     {
-        public ComboSupResponseDataModel data { get; set; }   
+        public ComboSupResponseDataModel data { get; set; }
+        public ResponseMetaModel metadata { get; set; }
     }
 
 
@@ -20,5 +21,14 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
     {
         public List<int> supplier_oid { get; set; }
     }
-     
+
+    public class ChkCancelRequestModel : ComboSupRequestModel
+    {
+        public string order_mid { get; set; }
+    }
+
+    public class ChkCancelResponseModel : ResponseJson
+    {
+    }
+
 }
