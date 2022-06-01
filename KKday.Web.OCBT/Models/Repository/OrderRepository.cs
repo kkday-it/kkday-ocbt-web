@@ -4,6 +4,7 @@ using System.Linq;
 using Dapper;
 using KKday.Web.OCBT.AppCode;
 using KKday.Web.OCBT.Models.Model;
+using KKday.Web.OCBT.Models.Model.DataModel;
 using KKday.Web.OCBT.Models.Model.Order;
 using KKday.Web.OCBT.Proxy;
 using Newtonsoft.Json;
@@ -76,6 +77,7 @@ LEFT JOIN booking_dtl d ON m.booking_mst_xid =d.booking_mst_xid WHERE 1=1 {FILTE
                     using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                     {
                         SqlMapper.AddTypeHandler(typeof(Dictionary<string, string>), new ObjectJsonMapper());
+                        SqlMapper.AddTypeHandler(typeof(SkuOid), new ObjectJsonMapper());
 
                         rs.order_dtl_list = conn.Query<OrderDtlModel>(sql, new { booking_mst_xid = Convert.ToInt64(id), voucherStatus }).ToList();
                         rs.count = rs.order_dtl_list.Count();
