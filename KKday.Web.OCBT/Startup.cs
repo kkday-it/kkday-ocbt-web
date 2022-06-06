@@ -26,6 +26,8 @@ namespace KKday.Web.OCBT
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+            // 初始化-網站主控台
+            Website.Instance.Init(this.Configuration);
         }
 
         public IConfiguration Configuration { get; }
@@ -129,6 +131,7 @@ namespace KKday.Web.OCBT
             services.AddSingleton<BatchJobRepository>();
             services.AddSingleton<ComboBookingRepository>();
             services.AddSingleton<IRedisHelper, RedisHelper>();
+            services.AddSingleton<AmazonS3Service, AmazonS3Service>();
             //Redis
             services.AddSingleton<IRedisHelper>((context) =>
             {
@@ -158,6 +161,7 @@ namespace KKday.Web.OCBT
 
             //Background Service
             services.AddHostedService<OrderBackgroundService>();
+            services.AddHostedService<VoucherBackgroundService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -174,8 +178,6 @@ namespace KKday.Web.OCBT
                 app.UseHsts();
             }
 
-            // 初始化-網站主控台
-            Website.Instance.Init(this.Configuration);
 
             // 多語系挖字初始設定
             var locOptions = app.ApplicationServices.GetService<IOptions<RequestLocalizationOptions>>();

@@ -17,6 +17,8 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
         public int voucher_deadline { get; set; }                     // 憑證最長等待的時間 （從 product_model 取出）
         public bool is_callback { get; set; }                         // 是否 callback
         public bool is_back { get; set; }                             // 是否已通知母單BACK
+        public bool is_need_back { get; set; }                        // 是否要通知母單BACK
+        public string monitor_start_datetime { get; set; }            // 監控憑證時間
         public string create_user { get; set; }
         public DateTime create_datetime { get; set; }
         public string modify_user { get; set; }

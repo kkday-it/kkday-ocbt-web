@@ -288,5 +288,68 @@ WHERE booking_mst_xid=:mst_xid ";
             }
         }
         #endregion Call WMS
+
+        #region 排程檢查母單是否超過時間且is_callback=false
+        public OrderRsModel GetTimeOutMaster()
+        {
+            OrderRsModel rs = new OrderRsModel
+            {
+                result = "9999",
+                count = 0
+            };
+
+            try
+            {
+                string sqlStmt = @"SELECT * FROM booking_mst WHERE is_callback =false ";
+
+                using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
+                {
+                    SqlMapper.AddTypeHandler(typeof(Dictionary<string, string>), new ObjectJsonMapper());
+                    rs.order_mst_list = conn.Query<OrderMstModel>(sqlStmt).ToList();
+                    rs.count = rs.order_mst_list.Count();
+                    rs.result = "0000";
+                }
+            }
+            catch(Exception ex)
+            {
+                rs.result_message = $"GetTimeOutMaster_Exception: Message={ex.Message}, StackTrace={ex.StackTrace}";
+            }
+
+            return rs;
+        }
+        /// <summary>
+        /// Update booking_mst.is_callback
+        /// </summary>
+        /// <param name="mst_xid"></param>
+        /// <param name="is_callback"></param>
+        /// <returns></returns>
+        public RsModel UpdateIsCallBack(int mst_xid, bool is_callback = false)
+        {
+            RsModel rs = new RsModel { result = "0001", result_message = "Update Fail" };
+
+            try
+            {
+                string sql = @"UPDATE public.booking_mst 
+SET is_callback=:is_callback, modify_datetime=NOW()
+WHERE booking_mst_xid=:mst_xid ";
+
+                using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
+                {
+                    if (conn.Execute(sql, new { mst_xid, is_callback }) > 0)
+                    {
+                        rs.result = "0000";
+                        rs.result_message = "OK";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                rs.result = "9999";
+                rs.result_message = $"UpdateIsCallBack_Exception: Message={ex.Message}, StackTrace={ex.StackTrace}";
+            }
+
+            return rs;
+        }
+        #endregion 排程檢查母單是否超過時間且is_callback=false
     }
 }

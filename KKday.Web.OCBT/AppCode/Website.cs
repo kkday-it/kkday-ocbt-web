@@ -21,6 +21,10 @@ namespace KKday.Web.OCBT.AppCode
         public IServiceProvider ServiceProvider { get; private set; }
         public readonly ILog loggerOrg = LogManager.GetLogger(typeof(Website));
         public Log4netHelper logger = new Log4netHelper(LogManager.GetLogger(typeof(Website)), "OCBT");
+        public string AWSaccessKey;
+        public string AWSaccessSecret;
+        public string AWSbucket;
+        public string AWSregionEP;
 
         public string SqlConnectionString { get; private set; }
         public string AesCryptKey { get; private set; }
@@ -54,6 +58,11 @@ namespace KKday.Web.OCBT.AppCode
             this.Configuration = config;
             //this._ERP_DB = Configuration["ConnectionStrings:PostgreSQL"];
 
+            AWSaccessKey = Configuration["AWSS3:AccessKey"];
+            AWSaccessSecret = Configuration["AWSS3:AccessSecretKey"];
+            AWSbucket = Configuration["AWSS3:Bucket"];
+            AWSregionEP = Configuration["AWSS3:RegionEP"];
+
             _stationID = Dns.GetHostName();
 
             //NpgsqlConnection npg_conn = new NpgsqlConnection(_ERP_DB);
@@ -62,8 +71,6 @@ namespace KKday.Web.OCBT.AppCode
             LoadOCBTDBConfig();
 
             logger.Debug("StartUp....!");
-
-            
         }
 
         private void LoadLog4netConfig()
