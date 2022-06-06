@@ -44,9 +44,7 @@ namespace KKday.Web.OCBT.V1
 
             try
             {
-                TimeSpan e = new TimeSpan(0, 1, 0);
-                //Task.Delay(e);
-
+                //TimeSpan e = new TimeSpan(0, 1, 0);
                 //Thread.Sleep(e);
 
                 _batchJobRepos.SetParentBack(guidKey);

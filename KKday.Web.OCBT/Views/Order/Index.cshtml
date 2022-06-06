@@ -15,29 +15,35 @@
         </div>
         <div id="page-search" class="page-search">
             <div class="row">
-                <b-form-group class="col-md-3" label="母單商品編號">
+                <b-form-group class="col-md-2" label="母單商品編號">
                     <b-form-input class="form-control" v-model="main_prod_oid"></b-form-input>
                 </b-form-group>
-                <b-form-group class="col-md-3" label="母單套餐編號">
+                <b-form-group class="col-md-2" label="母單套餐編號">
                     <b-form-input class="form-control" v-model="main_pkg_oid"></b-form-input>
                 </b-form-group>
-                <b-form-group class="col-md-3" label="母單訂單 Oid">
-                    <b-form-input class="form-control" v-model="main_order_oid"></b-form-input>
+                <b-form-group class="col-md-2" label="母單訂單 mid">
+                    <b-form-input class="form-control" v-model="main_order_mid"></b-form-input>
                 </b-form-group>
-                <b-form-group class="col-md-3" label="母單狀態">
-                    <b-form-select class="form-control" v-model="main_status" :options="main_status_options"></b-form-select>
+                <b-form-group class="col-md-3" label="母單訂單狀態">
+                    <b-form-select class="form-control" v-model="main_order_status" :options="main_order_status_options"></b-form-select>
                 </b-form-group>
-                <b-form-group class="col-md-3" label="子單商品編號">
+                <b-form-group class="col-md-3" label="母單憑證狀態">
+                    <b-form-select class="form-control" v-model="main_voucher_status" :options="main_voucher_status_options"></b-form-select>
+                </b-form-group>
+                <b-form-group class="col-md-2" label="子單商品編號">
                     <b-form-input class="form-control" v-model="sub_prod_oid"></b-form-input>
                 </b-form-group>
-                <b-form-group class="col-md-3" label="子單套餐編號">
+                <b-form-group class="col-md-2" label="子單套餐編號">
                     <b-form-input class="form-control" v-model="sub_pkg_oid"></b-form-input>
                 </b-form-group>
-                <b-form-group class="col-md-3" label="子單訂單 Oid">
-                    <b-form-input class="form-control" v-model="sub_order_oid"></b-form-input>
+                <b-form-group class="col-md-2" label="子單訂單 mid">
+                    <b-form-input class="form-control" v-model="sub_order_mid"></b-form-input>
                 </b-form-group>
-                <b-form-group class="col-md-3" label="子單狀態">
-                    <b-form-select class="form-control" v-model="sub_status" :options="sub_status_options"></b-form-select>
+                <b-form-group class="col-md-3" label="子單訂單狀態">
+                    <b-form-select class="form-control" v-model="sub_order_status" :options="sub_order_status_options"></b-form-select>
+                </b-form-group>
+                <b-form-group class="col-md-3" label="子單憑證狀態">
+                    <b-form-select class="form-control" v-model="sub_voucher_status" :options="sub_voucher_status_options"></b-form-select>
                 </b-form-group>
             </div>
             <div class="row">
@@ -67,7 +73,8 @@
                             <th data-field="order_mid">母單 mid</th>
                             <th data-field="order_oid">母單 oid</th>
                             <th data-field="main_master_oid">母單 master_oid</th>
-                            <th data-field="booking_mst_order_status">母單狀態</th>
+                            <th data-field="booking_mst_order_status">母單訂單狀態</th>
+                            <th data-field="booking_voucher_order_status">母單憑證狀態</th>
                             <th data-field="voucher_deadline">憑證最長等待時間(分鐘)</th>
                             <th data-field="prod_oid">產品編號</th>
                             <th data-field="prod_name">產品名稱</th>
@@ -110,7 +117,11 @@
                 },
                 {
                     field: 'booking_dtl_order_status',
-                    title: '子單狀態'
+                    title: '子單訂單狀態'
+                },
+                {
+                    field: 'booking_dtl_voucher_status',
+                    title: '子單憑證狀態'
                 },
                 {
                     field: 'prod_oid',
@@ -135,35 +146,56 @@
         var data = {
             main_prod_oid: '',
             main_pkg_oid: '',
-            main_order_oid: '',
+            main_order_mid: '',
             sub_prod_oid: '',
             sub_pkg_oid: '',
-            sub_order_oid: '',
-            main_status: null,
-            sub_status: null,
-            main_status_options: [],
-            sub_status_options: []
+            sub_order_mid: '',
+            main_order_status: null,
+            main_voucher_status: null,
+            sub_order_status: null,
+            sub_voucher_status:null,
+            main_order_status_options: [],
+            main_voucher_status_options:[],
+            sub_order_status_options: [],
+            sub_voucher_status_options:[],
         };
-        data.main_status_options = initOption();
-        data.main_status_options.push({ value: 'GL', text: '已完成' });
-        data.sub_status_options = initOption();
-        data.sub_status_options.push(
-            { value: 'CB', text: '取憑證中' }, { value: 'UPLOAD_FAIL', text: '上傳憑證失敗' }, { value: 'DOWNLOAD_FAIL', text: '下載憑證失敗' }, { value: 'GL', text: '已完成' }
-        );
+        data.main_order_status_options = initOrderStatusOption();
+        data.main_voucher_status_options = initVoucherStatusOption();
+        data.main_order_status_options.push({ value: 'GL', text: '已完成' });
+        data.sub_order_status_options = initOrderStatusOption();
+        data.sub_order_status_options.push({ value: 'GL', text: '已完成' });
+        data.sub_voucher_status_options = initSubVoucherStatusOption();
+        
         return data;
     }
-    function initOption() {
+    function initOrderStatusOption() {
         return options = [
             { value: null, text: '@localizer["CommTxt_Select"]' },
             { value: 'NW', text: '成立' },
             { value: 'PROCESS', text: '準備預定中' },
             { value: 'BOOKING_FAIL', text: '成立訂單失敗' },
-            { value: 'BOOKING_OK', text: '已成立訂單' },
-            { value: 'VOUCHER_FAIL', text: '憑證失敗' },
-            { value: 'VOUCHER_OK', text: '憑證ＯＫ' },
-            { value: 'NOTICE_FAIL', text: '回報失敗' },
-            { value: 'NOTICE_OK', text: '回報ＯＫ' },
-            { value: 'CB_FAIL', text: '取憑證失敗' },
+        ];
+    }
+    function initVoucherStatusOption() {
+        return options = [
+            { value: null, text: '@localizer["CommTxt_Select"]' },
+            { value: 'NW', text: '成立' },
+            { value: 'PROCESS', text: '準備預定中' },
+            { value: 'VOUCHER_FAIL', text: '取得憑證失敗' },
+            { value: 'VOUCHER_OK', text: '取得憑證成功' },
+            { value: 'CB_FAIL', text: 'CALLBACK失敗' },
+            { value: 'GL', text: '已完成' },
+        ];
+    }
+    function initSubVoucherStatusOption() {
+        return options = [
+            { value: null, text: '@localizer["CommTxt_Select"]' },
+            { value: 'NW', text: '成立' },
+            { value: 'PROCESS', text: '準備預定中' },
+            { value: 'VOUCHER_OK', text: '取得憑證成功' },
+            { value: 'CB_FAIL', text: 'CALLBACK失敗' },
+            { value: 'DOWNLOAD_FAIL', text: 'DOWNLOAD失敗' },
+            { value: 'GL', text: '已完成' },
         ];
     }
     new Vue({
