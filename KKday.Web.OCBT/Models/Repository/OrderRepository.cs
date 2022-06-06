@@ -4,6 +4,7 @@ using System.Linq;
 using Dapper;
 using KKday.Web.OCBT.AppCode;
 using KKday.Web.OCBT.Models.Model;
+using KKday.Web.OCBT.Models.Model.DataModel;
 using KKday.Web.OCBT.Models.Model.Order;
 using KKday.Web.OCBT.Proxy;
 using Newtonsoft.Json;
@@ -44,7 +45,7 @@ LEFT JOIN booking_dtl d ON m.booking_mst_xid =d.booking_mst_xid WHERE 1=1 {FILTE
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
                     SqlMapper.AddTypeHandler(typeof(Dictionary<string, string>), new ObjectJsonMapper());
-                    rs.total_count = conn.QuerySingle<int>(sqlCount);
+                    rs.total_count = conn.QuerySingle<int>(sqlCount, _filter.args);
                     rs.order_mst_list = conn.Query<OrderMstModel>(sqlStmt, _filter.args).ToList();
                     rs.count = rs.order_mst_list.Count();
                     rs.result = "0000";
@@ -76,6 +77,7 @@ LEFT JOIN booking_dtl d ON m.booking_mst_xid =d.booking_mst_xid WHERE 1=1 {FILTE
                     using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                     {
                         SqlMapper.AddTypeHandler(typeof(Dictionary<string, string>), new ObjectJsonMapper());
+                        SqlMapper.AddTypeHandler(typeof(SkuOid), new ObjectJsonMapper());
 
                         rs.order_dtl_list = conn.Query<OrderDtlModel>(sql, new { booking_mst_xid = Convert.ToInt64(id), voucherStatus }).ToList();
                         rs.count = rs.order_dtl_list.Count();
@@ -110,15 +112,36 @@ LEFT JOIN booking_dtl d ON m.booking_mst_xid =d.booking_mst_xid WHERE 1=1 {FILTE
                     //    _sql += " AND m.pkg_oid = :main_pkg_oid";
                     //    _dynamic.Add("main_pkg_oid", _filter.main_pkg_oid);
                     //}
-                    if (_filter.main_order_oid > 0)
+                    if (!string.IsNullOrEmpty(_filter.main_order_mid ))
                     {
-                        _sql += " AND m.order_oid = :main_order_oid";
-                        _dynamic.Add("main_order_oid", _filter.main_order_oid);
+                        _sql += " AND m.order_mid = :main_order_mid";
+                        _dynamic.Add("main_order_mid", _filter.main_order_mid);
                     }
-                    if (!string.IsNullOrEmpty(_filter.main_status))
+                    if (!string.IsNullOrEmpty(_filter.sub_order_mid ))
                     {
-                        _sql += " AND m.booking_mst_order_status = :main_status";
-                        _dynamic.Add("main_status", _filter.main_status);
+                        _sql += " AND d.order_mid = :sub_order_mid";
+                        _dynamic.Add("sub_order_mid", _filter.sub_order_mid);
+                    }
+                    if (!string.IsNullOrEmpty(_filter.main_order_status))
+                    {
+                        _sql += " AND m.booking_mst_order_status = :main_order_status";
+                        _dynamic.Add("main_order_status", _filter.main_order_status);
+                    }
+                    if (!string.IsNullOrEmpty(_filter.main_voucher_status))
+                    {
+                        _sql += " AND m.booking_mst_voucher_status = :main_voucher_status";
+                        _dynamic.Add("main_voucher_status", _filter.main_voucher_status);
+                    }
+
+                    if (!string.IsNullOrEmpty(_filter.sub_order_status))
+                    {
+                        _sql += " AND d.booking_dtl_order_status = :sub_order_status";
+                        _dynamic.Add("sub_order_status", _filter.sub_order_status);
+                    }
+                    if (!string.IsNullOrEmpty(_filter.sub_voucher_status))
+                    {
+                        _sql += " AND d.booking_dtl_voucher_status = :sub_voucher_status";
+                        _dynamic.Add("sub_voucher_status", _filter.sub_voucher_status);
                     }
                 }
                 // Sort

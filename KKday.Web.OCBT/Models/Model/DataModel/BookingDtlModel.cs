@@ -10,7 +10,7 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
         public int prod_oid { get; set; }               // 子單prod_oid
         public int package_oid { get; set; }            // 子單package_oid
         public int item_oid { get; set; }               // 子單item_oid
-        public Dictionary<string, string> sku_oid { get; set; }             // 子單sku_oid
+        public SkuOid sku_oid { get; set; }             // 子單sku_oid
         public int booking_qty { get; set; }            // 規則上欲訂購的數量
         public int real_booking_qty { get; set; }       // 實際訂購的數量
         public string booking_dtl_order_status { get; set; }    // 訂單狀態
@@ -24,5 +24,9 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
         public DateTime create_datetime { get; set; }
         public string modify_user { get; set; }
         public DateTime? modify_datetime { get; set; }
+    }
+    public class SkuOid
+    {
+        public string[] sku_oid { get; set; }
     }
 }
