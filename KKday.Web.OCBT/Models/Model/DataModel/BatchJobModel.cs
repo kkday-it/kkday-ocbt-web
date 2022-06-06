@@ -5,6 +5,7 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
 
     public class ParentOrderModel :BookingMstModel
     {
+        public string is_open_date { get; set; } 
         public List<ChildOrderModel> child_order { get; set; }
     }
 
