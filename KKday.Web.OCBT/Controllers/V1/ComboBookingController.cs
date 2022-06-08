@@ -94,5 +94,16 @@ namespace KKday.Web.OCBT.V1
             }
         }
 
+        [HttpGet("ThrowQueue")]
+        public string throwQueue(string order_mid)
+        {
+            var pushData = new 
+            {
+                master_order_mid=order_mid
+            };
+            _redisHelper.Push("ComboBookingVoucher", JsonConvert.SerializeObject(pushData));//將Java資料傳入redisQueue
+            return "OK";
+        }
+
     }
 }

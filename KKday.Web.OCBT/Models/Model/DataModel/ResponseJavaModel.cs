@@ -20,6 +20,11 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
         public string request_uuid { get; set; }
         public ResponseDataModel data { get; set; }
         public ResponseMetaModel metadata { get; set; }
+
+        //orderInfo需要參數
+        public string memberUuid { get; set; }
+        public string deviceId { get; set; }
+        public string tokenKey { get; set; }
     }
     public class ResponseMetaModel
     {

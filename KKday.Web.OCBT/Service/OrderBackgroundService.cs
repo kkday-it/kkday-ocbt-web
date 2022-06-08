@@ -23,8 +23,12 @@ namespace KKday.Web.OCBT.Service
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     var keyforOrder = "ComboBookingKeys";
+                    
                     var msg = _redisHelper.Pop(keyforOrder);
                     //ComboBookingFlow(msg);
+
+
+
                     return Task.CompletedTask;
                 }
             }
