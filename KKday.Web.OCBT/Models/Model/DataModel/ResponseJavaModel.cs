@@ -34,6 +34,7 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
     public class ResponseDataModel
     {
        public List<ResponseOrderInfoModel> orderinfo { get; set; }
+       public string base64str { get; set; }
     }
     public class ResponseOrderInfoModel
     {
