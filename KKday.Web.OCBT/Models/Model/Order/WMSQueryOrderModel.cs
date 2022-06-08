@@ -87,6 +87,13 @@ namespace KKday.Web.OCBT.Models.Model.Order
         public string pmgwCurrCd { get; set; }
         public double? pmgwCurrPriceTotal { get; set; }//增加問號避免null值
         public bool isNew { get; set; }
+        public List<skuInfos> skuInfoList { get; set; }//新增sku的資訊
+    }
+    public class skuInfos
+    {
+        public string skuOid { get; set; }
+        public int? qty { get; set; }
+        public double? price { get; set; }
     }
     #endregion RS Model From WMS
 }

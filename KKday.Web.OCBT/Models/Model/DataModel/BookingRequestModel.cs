@@ -14,6 +14,7 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
         public int packageOid { get; set; }
         public string pkgName { get; set; }
         public string orderMid { get; set; }
+        public int orderOid { get; set; }//新增orderOid
         public string contactCountryCd { get; set; }
         public string contactEmail { get; set; }
         public string contactTelCd { get; set; }
