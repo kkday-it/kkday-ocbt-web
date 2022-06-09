@@ -8,6 +8,7 @@ namespace KKday.Web.OCBT.Models.Model.Product
         public string locale { get; set; }
         public string prod_no { get; set; }
         public string state { get; set; }
+        public string currency { get; set; }
         public List<string> block { get; set; }
         public string pkg_no { get; set; }
         public string begin_date { get; set; }

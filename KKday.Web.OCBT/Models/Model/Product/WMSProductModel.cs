@@ -6,6 +6,7 @@ namespace KKday.Web.OCBT.Models.Model.Product
     public class WMSProductModel
     {
         public string version { get; set; }
+        public string timezone { get; set; }
         public List<int> pkgs { get; set; }
 
     }
@@ -16,11 +17,13 @@ namespace KKday.Web.OCBT.Models.Model.Product
         public string guid { get; set; }
         public int pkg_no { get; set; }
         public string pkg_name { get; set; }
+        public List<WMSItemModel> item { get; set; }
 
     }
     public class WMSItemModel
     {
         public int item_no { get; set; }
+        public bool? has_event { get; set; }
         public string unit { get; set; }
         public string unit_desc { get; set; }
         public List<Spec> specs { get; set; }
