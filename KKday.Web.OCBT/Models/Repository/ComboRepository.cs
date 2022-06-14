@@ -435,6 +435,23 @@ where booking_dtl_xid=@booking_dtl_xid";
 
                                 };//插入DtlData
                                 var bookingModel = _bookingRepos.SetBookingModel(ProdModuleModel, queueModel.order);//取得訂購的模組
+                                //補上bookingInfo
+                                bookingModel.bookingInfo = new Model.CartBooking.bookingInfoModel
+                                {
+                                    time_zone=ProdModel.timezone,
+                                    prod_name=ProdModel.prod_name,
+                                    pkg_name=PkgModel.pkg_name,
+                                    prod_oid=Convert.ToInt64(prod.prod_oid),
+                                    pkg_oid=Convert.ToInt64(prod.pkg_oid),
+                                    skus=new List<Model.CartBooking.BookingInfoConfirmSku>(),
+                                    is_open_date=(ProdModel.go_date_setting.type=="03"||ProdModel.go_date_setting.type=="04")?true:false,
+                                    pay_type="arType"
+                                };
+                                if (ProdModel.go_date_setting.type == "03" || ProdModel.go_date_setting.type == "04")
+                                {
+                                    bookingModel.lstGoDt = null;
+                                    bookingModel.lstBackDt = null;
+                                }
                                 cartBooking.Add(bookingModel);
                                 Model.CartBooking.ConfirmProdInfoModel confirmOrder = new Model.CartBooking.ConfirmProdInfoModel()
                                 {
@@ -451,7 +468,7 @@ where booking_dtl_xid=@booking_dtl_xid";
                                     item_oid = prod.item_oid,
                                     skus = new List<Model.CartBooking.ConfirmSku>(),
                                     locale = queueModel.order.memberLang,
-                                    //go_date_type 需要補
+                                    go_date_type= ProdModel.go_date_setting.type
                                 };
                                 double tempTotalPrice = 0;
                                 int? dtlTotalQty = 0;
