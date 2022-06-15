@@ -15,6 +15,14 @@ namespace KKday.Web.OCBT.Models.Repository
 {
     public class OrderRepository
     {
+        private readonly ComboBookingRepository _comboBookingRepos;
+        private readonly OrderProxy _orderProxy;
+        public OrderRepository(ComboBookingRepository comboBookingRepos, OrderProxy orderProxy)
+        {
+            _comboBookingRepos = comboBookingRepos;
+            _orderProxy = orderProxy;
+        }
+
         /// <summary>
         /// Query Order Master Data
         /// </summary>
@@ -351,5 +359,86 @@ WHERE booking_mst_xid=:mst_xid ";
             return rs;
         }
         #endregion 排程檢查母單是否超過時間且is_callback=false
+
+
+
+
+        public void NotifyParentMemo(OrderMemoRequstModel request)
+        {
+            try
+            {
+                string orderMemo = "";
+                if (request?.@event != "BE2_CANCEL" || request?.@event != "PART_REFUND")
+                {
+                    //滿足呼叫的內容
+                    if (request?.@event == "BE2_CANCEL")
+                    {
+                        //order_memo 範例  （如下）   
+                        //子訂單 21KK219206036
+                        //OP已啟動特殊原因取消，請進行退款作業
+                        //原因：Fraudulent - Voucher Sent
+
+                        orderMemo = $"{orderMemo}子訂單{request?.orderMid}\r\n";
+                        orderMemo = $"{orderMemo}OP已啟動特殊原因取消，請進行退款作業\r\n";
+                        orderMemo = $"{ orderMemo}原因：『‘{request?.modifyReasonCodeTransTW}’ 』{request?.modifyReasonDesc}\r\n";
+                        //sub_order  21KK219206036
+                        //OP has started the special  reason cancellation process , please do the refund operation
+                        //Reason：Fraudulent - Voucher Sent
+                        orderMemo = $"{orderMemo}sub_order{request?.orderMid}\r\n";
+                        orderMemo = $"{orderMemo}OP has started the special  reason cancellation process , please do the refund operation\r\n";
+                        orderMemo = $"{ orderMemo}Reason：『‘{request?.modifyReasonCodeTransEn}’ 』{request?.modifyReasonDesc}\r\n";
+                    }
+                    else if (request?.@event == "PART_REFUND")
+                    {
+                        //子訂單 『 order_mid 』
+                        //OP已啟動部分退款，請進行退款作業
+                        //原因：『‘’modifyReasonCode’’ 』(『  "modifyReasonDesc"』)  
+                        orderMemo = $"{orderMemo}子訂單{request?.orderMid}\r\n";
+                        orderMemo = $"{orderMemo}OP已啟動部分退款，請進行退款作業\r\n";
+                        orderMemo = $"{ orderMemo}原因：『‘{request?.modifyReasonCodeTransTW}’ 』{request?.modifyReasonDesc}\r\n";
+                        //sub_order  『 order_mid 』
+                        //OP has started a partial refund, please do the refund operation
+                        //Reason：『‘’modifyReasonCode’’ 』(『  "modifyReasonDesc"』)
+                        orderMemo = $"{orderMemo}sub_order{request?.orderMid}\r\n";
+                        orderMemo = $"{orderMemo}OP has started a partial refund, please do the refund operation\r\n";
+                        orderMemo = $"{ orderMemo}Reason：『‘{request?.modifyReasonCodeTransEn}’ 』{request?.modifyReasonDesc}\r\n";
+                    }
+
+                    //呼叫java
+                    //呼叫java母子狀態
+                    OrderApiRqModel orderApi = new OrderApiRqModel()
+                    {
+                        apiKey = Website.Instance.Configuration["KKdayAPI:Body:ApiKey"],
+                        userOid = Website.Instance.Configuration["KKdayAPI:Body:UserOid"],
+                        locale = "zh-tw",
+                        ipaddress = _comboBookingRepos.GetLocalIPAddress()
+                    };
+
+                    Dictionary<string, object> json = new Dictionary<string, object>();
+                    json.Add("memoType", "01");
+                    json.Add("memoMsg", orderMemo);
+                    orderApi.json = json;
+
+                    string url = $"{Website.Instance.Configuration["ApiUrl:JAVA"]}/v2/order/memo//" + request?.parentOrderMid;
+                    string result = _orderProxy.Post(url, JsonConvert.SerializeObject(orderApi,
+                                Newtonsoft.Json.Formatting.None,
+                                new JsonSerializerSettings
+                                {
+                                    NullValueHandling = NullValueHandling.Ignore
+                                }), request?.requestUuid);
+                }
+                else
+                {
+                    throw new Exception("非指定的event:"+ request?.@event);
+                }
+
+                //依據event 組出回覆的內容
+            }
+            catch (Exception ex)
+            {
+                Website.Instance.logger.Fatal($"OrderRepository_NotifyParentMemo_exception:GuidKey={request?.requestUuid}, Message={ex.Message}, StackTrace={ex.StackTrace}");
+                throw ex;
+            }
+        }
     }
 }
