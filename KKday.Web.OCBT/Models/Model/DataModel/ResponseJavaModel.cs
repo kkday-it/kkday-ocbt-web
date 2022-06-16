@@ -17,7 +17,7 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
     public class ResponseJson
     {
         public string orderMid { get; set; }
-        public string request_uuid { get; set; }
+        public string requestUuid { get; set; }
         public ResponseDataModel data { get; set; }
         public ResponseMetaModel metadata { get; set; }
 

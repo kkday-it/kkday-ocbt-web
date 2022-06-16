@@ -5,7 +5,7 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
 {
     public class BookingRequestModel
     {
-        public string request_uuid { get; set; }
+        public string requestUuid { get; set; }
         public string source { get; set; }
         public JavaOrderModel order { get; set; }
     }

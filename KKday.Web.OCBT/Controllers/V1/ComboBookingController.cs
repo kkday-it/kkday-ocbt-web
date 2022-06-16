@@ -43,13 +43,13 @@ namespace KKday.Web.OCBT.V1
             {
                 Website.Instance.logger.Info($"ComboBooking_GetComboSupplierList_quest:{JsonConvert.SerializeObject(rq)}");
 
-                if (rq?.source_id != "BE2" && rq?.source_id != "JAVA" && rq?.source_id != "MKT") throw new Exception("非指定使用者！");
+                if (rq?.sourceId != "BE2" && rq?.sourceId != "JAVA" && rq?.sourceId != "MKT" && rq?.sourceId != "PROD") throw new Exception("非指定使用者！");
 
                 return _comboSupRepos.getComboSupLst(rq);
             }
             catch (Exception ex)
             {
-                Website.Instance.logger.Fatal($"ComboBooking_GetComboSupplierList_exception:GuidKey ={rq?.request_uuid}, Message={ex.Message}, StackTrace={ex.StackTrace}");
+                Website.Instance.logger.Fatal($"ComboBooking_GetComboSupplierList_exception:GuidKey ={rq?.requestUuid}, Message={ex.Message}, StackTrace={ex.StackTrace}");
 
                 return new ComboSupResponseModel
                 {
@@ -81,7 +81,7 @@ namespace KKday.Web.OCBT.V1
             }
             catch (Exception ex)
             {
-                Website.Instance.logger.Fatal($"ComboBooking_ChkCancel_exception:GuidKey ={rq?.request_uuid}, Message={ex.Message}, StackTrace={ex.StackTrace}");
+                Website.Instance.logger.Fatal($"ComboBooking_ChkCancel_exception:GuidKey ={rq?.requestUuid}, Message={ex.Message}, StackTrace={ex.StackTrace}");
 
                 return new ComboSupResponseModel
                 {
