@@ -54,5 +54,36 @@ namespace KKday.Web.OCBT.V1
             }
         }
 
+        [HttpPost("ChkCancel")]
+        public ComboSupResponseModel ChkCancel([FromBody] ChkCancelRequestModel rq)
+        {
+            try
+            {
+                Website.Instance.logger.Info($"ComboBooking_ChkCancel_quest:{JsonConvert.SerializeObject(rq)}");
+
+                return new ComboSupResponseModel
+                {
+                    metadata = new ResponseMetaModel
+                    {
+                        status = "4002",
+                        description = "不能取消"
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                Website.Instance.logger.Fatal($"ComboBooking_ChkCancel_exception:GuidKey ={rq?.requestUuid}, Message={ex.Message}, StackTrace={ex.StackTrace}");
+
+                return new ComboSupResponseModel
+                {
+                    metadata = new ResponseMetaModel
+                    {
+                        status = "4002",
+                        description = "不能取消"
+                    }
+                };
+            }
+        }
+
     }
 }
