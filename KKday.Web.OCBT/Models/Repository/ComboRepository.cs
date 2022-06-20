@@ -5,6 +5,7 @@ using KKday.Web.OCBT.Models.Model.DataModel;
 using Npgsql;
 using System.Linq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Net.Http;
@@ -20,10 +21,12 @@ namespace KKday.Web.OCBT.Models.Repository
     {
         private readonly IServiceProvider _services;
         private readonly IRedisHelper _redis;
-        public ComboBookingRepository(IServiceProvider services,IRedisHelper redis)
+        private readonly SlackHelper _slack;
+        public ComboBookingRepository(IServiceProvider services,IRedisHelper redis, SlackHelper slack)
         {
             _services = services;
             _redis = redis;
+            _slack = slack;
         }
         public string ComboBooking()
         {
@@ -239,10 +242,15 @@ where booking_dtl_xid=@booking_dtl_xid";
                     string url = "";
                     string result = CommonProxy.Post(url, JsonConvert.SerializeObject(callbackData));
                     Website.Instance.logger.Info($"CallBackJava result message: {result}");
+
+                    var rs = JObject.Parse(result);
+                    if (rs["content"]["result"]?.ToString() != "0000")
+                    {
+                        //警示
+                        _slack.SlackPost(Guid.NewGuid().ToString("N"), "CallBackJava", "ComboRepository/CallBackJava", $"order_mid:{order_mid},CallBackJava回覆失敗,請協助確認！", $"Result ={ result}");
+                    }
                     UpdateCallBack(true, order_mid,"SYSTEM");
                 }
-                
-                
             }
             catch (Exception ex)
             {

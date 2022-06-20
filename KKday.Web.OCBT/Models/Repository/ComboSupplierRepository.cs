@@ -37,13 +37,13 @@ where status = 'NW'";
                     },
                     data = new ComboSupResponseDataModel
                     {
-                        supplier_oid = supOidLst
+                        supplierOid = supOidLst
                     }
                 };
             }
             catch (Exception ex)
             {
-                Website.Instance.logger.Fatal($"ComboSupplierRepository_getComboSupLst_exception:GuidKey ={rq?.request_uuid}, Message={ex.Message}, StackTrace={ex.StackTrace}");
+                Website.Instance.logger.Fatal($"ComboSupplierRepository_getComboSupLst_exception:GuidKey ={rq?.requestUuid}, Message={ex.Message}, StackTrace={ex.StackTrace}");
 
                 return new ComboSupResponseModel
                 {
@@ -53,7 +53,7 @@ where status = 'NW'";
                         description = "異常:" + ex.Message.ToString()
                     },
                     data =new ComboSupResponseDataModel {
-                        supplier_oid = supOidLst
+                        supplierOid = supOidLst
                     }
                 };
             }

@@ -36,64 +36,6 @@ namespace KKday.Web.OCBT.V1
             };//立即return 回java
         }
 
-        [HttpPost("GetComboSupplierList")]
-        public ComboSupResponseModel GetComboSupplierList([FromBody] ComboSupRequestModel rq)
-        {
-            try
-            {
-                Website.Instance.logger.Info($"ComboBooking_GetComboSupplierList_quest:{JsonConvert.SerializeObject(rq)}");
-
-                if (rq?.source_id != "BE2" && rq?.source_id != "JAVA" && rq?.source_id != "MKT") throw new Exception("非指定使用者！");
-
-                return _comboSupRepos.getComboSupLst(rq);
-            }
-            catch (Exception ex)
-            {
-                Website.Instance.logger.Fatal($"ComboBooking_GetComboSupplierList_exception:GuidKey ={rq?.request_uuid}, Message={ex.Message}, StackTrace={ex.StackTrace}");
-
-                return new ComboSupResponseModel
-                {
-                    metadata = new ResponseMetaModel
-                    {
-                        status = "9999",
-                        description = "異常:" + ex.Message.ToString()
-                    }
-                };
-            }
-        }
-
-
-        [HttpPost("ChkCancel")]
-        public ComboSupResponseModel ChkCancel([FromBody] ChkCancelRequestModel rq)
-        {
-            try
-            {
-                Website.Instance.logger.Info($"ComboBooking_ChkCancel_quest:{JsonConvert.SerializeObject(rq)}");
-
-                return new ComboSupResponseModel
-                {
-                    metadata = new ResponseMetaModel
-                    {
-                        status = "4002",
-                        description = "不能取消"
-                    }
-                };
-            }
-            catch (Exception ex)
-            {
-                Website.Instance.logger.Fatal($"ComboBooking_ChkCancel_exception:GuidKey ={rq?.request_uuid}, Message={ex.Message}, StackTrace={ex.StackTrace}");
-
-                return new ComboSupResponseModel
-                {
-                    metadata = new ResponseMetaModel
-                    {
-                        status = "4002",
-                        description = "不能取消"
-                    }
-                };
-            }
-        }
-
         [HttpGet("ThrowQueue")]
         public string throwQueue(string order_mid)
         {

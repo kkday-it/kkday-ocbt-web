@@ -130,6 +130,7 @@ namespace KKday.Web.OCBT
             services.AddSingleton<ComboSupplierRepository>();
             services.AddSingleton<BatchJobRepository>();
             services.AddSingleton<ComboBookingRepository>();
+            services.AddSingleton<SlackHelper>();
             services.AddSingleton<IRedisHelper, RedisHelper>();
             services.AddSingleton<AmazonS3Service, AmazonS3Service>();
             //Redis
