@@ -6,12 +6,6 @@ namespace KKday.Web.OCBT.Models.Model.Order
     public class WMSQueryVoucherModel
     {
     }
-    public class VoucherRqModel
-    {
-        public bool is_KKday { get; set; }
-        public string locale_lang { get; set; }
-        public string order_no { get; set; }
-    }
     public class VoucherRsModel : RsModel
     {
         public string result_msg { get; set; }

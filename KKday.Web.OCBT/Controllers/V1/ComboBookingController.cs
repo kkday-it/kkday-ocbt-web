@@ -40,7 +40,6 @@ namespace KKday.Web.OCBT.V1
             };//立即return 回java
         }
 
-
         [HttpGet("ThrowQueue")]
         public string throwQueue(string order_mid)
         {
@@ -52,6 +51,44 @@ namespace KKday.Web.OCBT.V1
             return "OK";
         }
 
+        /// <summary>
+        /// Get From S3, Byte[] Convert To Base64
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("ConvertBase64")]
+        //[HttpPost("ConvertBase64")]
+        public ResponseJson ConvertBase64(string file_name)
+        {
+            ResponseJson rs = new ResponseJson();
+            rs.metadata = new ResponseMetaModel
+            {
+                status = "3002",
+                description = "回傳檔案失敗"
+            };
+
+            try
+            {
+                // Get From S3
+                var getByte = _amazonS3Service.GetObject(file_name).Result;
+                if (getByte != null)
+                {
+                    if (getByte.Success)
+                    {
+                        // Byte[] Convert to Base64
+                        rs.data.base64str = Convert.ToBase64String(getByte.DataBytes);
+                        rs.metadata.status = "3001";
+                        rs.metadata.description = "回傳檔案成功";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                //Website.Instance.logger.Fatal($"ComboBooking_ChkCancel_exception:GuidKey ={rq?.request_uuid}, Message={ex.Message}, StackTrace={ex.StackTrace}");
+                rs.metadata.description += $"Msg = {ex.Message} , StackTrace = {ex.StackTrace}";
+            }
+
+            return rs;
+        }
 
         [HttpGet("TestSetVoucher")]
         public string TestSetVoucher(string order_mid)

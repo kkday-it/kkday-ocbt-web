@@ -281,13 +281,32 @@ WHERE booking_mst_xid=:mst_xid ";
         {
             try
             {
-                VoucherRqModel rq = new VoucherRqModel
+                Dictionary<string, object> rq = new Dictionary<string, object>
                 {
-                    is_KKday = true,
-                    locale_lang = "zh-tw",
-                    order_no = order
+                    { "is_KKday" , true },
+                    { "locale_lang" , "zh-tw" },
+                    { "order_no" , order }
                 };
                 string url = string.Format("{0}{1}", Website.Instance.Configuration["WMS_API:URL"], "Voucher/QueryVoucherList");
+                return JsonConvert.DeserializeObject<VoucherRsModel>(CommonProxy.Post(url, JsonConvert.SerializeObject(rq)));
+            }
+            catch(Exception ex)
+            {
+                throw ex;
+            }
+        }
+        public VoucherRsModel DownloadVoucher(string order_no, string order_file_id)
+        {
+            try
+            {
+                Dictionary<string, object> rq = new Dictionary<string, object>
+                {
+                    { "is_KKday" , true },
+                    { "locale_lang" , "zh-tw" },
+                    { "order_no" , order_no },
+                    { "order_file_id" , order_file_id }
+                };
+                string url = string.Format("{0}{1}", Website.Instance.Configuration["WMS_API:URL"], "Voucher/Download");
                 return JsonConvert.DeserializeObject<VoucherRsModel>(CommonProxy.Post(url, JsonConvert.SerializeObject(rq)));
             }
             catch(Exception ex)
