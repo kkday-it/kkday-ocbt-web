@@ -27,7 +27,7 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
         public string eventTime { get; set; }
         public string prodCurrCd { get; set; }
         //public string eventBackupData { get; set; }
-        public List<EventBackupData> eventBackupData { get; set; }
+        //public List<EventBackupData> eventBackupData { get; set; }
         public List<OrderCusList> orderCusList { get; set; }
         public string memberLang { get; set; }
 
@@ -41,7 +41,7 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
     }
     public class EventBackupData
     {
-        public int eventSort { get; set; }
+        public int? eventSort { get; set; }
         public string eventDate { get; set; }
         public string eventTime { get; set; }
     }

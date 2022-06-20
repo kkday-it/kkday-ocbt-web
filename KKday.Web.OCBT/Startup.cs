@@ -133,6 +133,7 @@ namespace KKday.Web.OCBT
             services.AddSingleton<SlackHelper>();
             services.AddSingleton<IRedisHelper, RedisHelper>();
             services.AddSingleton<AmazonS3Service, AmazonS3Service>();
+            services.AddSingleton<BookingRepository>();
             //Redis
             services.AddSingleton<IRedisHelper>((context) =>
             {

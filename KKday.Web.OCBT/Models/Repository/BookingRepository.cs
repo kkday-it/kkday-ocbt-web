@@ -50,7 +50,7 @@ namespace KKday.Web.OCBT.Models.Repository
                     {
                         if (masterInfo?.content?.orderModuleDataList != null && masterInfo.content.orderModuleDataList.Where(m => m.moduleType == "OMDL_CUST_DATA").Count() > 0)
                         {
-                            rs.travelerData = GetCusModel(module.module_cust_data, masterInfo.content.orderModuleDataList.Where(m => m.moduleType == "OMDL_CUST_DATA").Select(x => x.moduleData).ToList());
+                            rs.travelerData = GetCusModel(module.module_cust_data, masterInfo.content.orderModuleDataList.Where(m => m.moduleType == "OMDL_CUST_DATA").Select(x => x.moduleData).First());
                         }
                     }
                     else
@@ -207,7 +207,7 @@ namespace KKday.Web.OCBT.Models.Repository
             }
         }
 
-        public contactDataM GetContModel(ContactData contactModel, ModuleModel orderMasterModule)
+        public contactDataM GetContModel(ContactData contactModel, List<ModuleModel> orderMasterModule)
         {
             try
             {
@@ -225,7 +225,7 @@ namespace KKday.Web.OCBT.Models.Repository
             }
         }
 
-        public sendDataM GetSendModel(SendData sendModel, ModuleModel orderMasterModule)
+        public sendDataM GetSendModel(SendData sendModel, List<ModuleModel> orderMasterModule)
         {
             try
             {
@@ -243,7 +243,7 @@ namespace KKday.Web.OCBT.Models.Repository
             }
         }
 
-        public flightInfoDataM GetFlightInfoModel(FlightInfo flightModel, ModuleModel orderMasterModule)
+        public flightInfoDataM GetFlightInfoModel(FlightInfo flightModel, List<ModuleModel> orderMasterModule)
         {
             try
             {
@@ -261,7 +261,7 @@ namespace KKday.Web.OCBT.Models.Repository
             }
         }
 
-        public passengerDataM GetPassengerModel(CarPasgr pasgrModel, ModuleModel orderMasterModule)
+        public passengerDataM GetPassengerModel(CarPasgr pasgrModel, List<ModuleModel> orderMasterModule)
         {
             try
             {
@@ -279,7 +279,7 @@ namespace KKday.Web.OCBT.Models.Repository
             }
         }
 
-        public otherDataM GetOtherModel(SimWifi simWifiModel, ModuleModel orderMasterModule)
+        public otherDataM GetOtherModel(SimWifi simWifiModel, List<ModuleModel> orderMasterModule)
         {
             try
             {
@@ -318,8 +318,8 @@ namespace KKday.Web.OCBT.Models.Repository
                     }
 
                 };
-                string url = $"{Website.Instance.Configuration["ApiUrl:JAVA"]}v2/order/info/" + order_master_oid;
-                string result = CommonProxy.Post(url, JsonConvert.SerializeObject(callbackData));
+                string url = $"{Website.Instance.Configuration["COMBO_SETTING:JAVA"]}api/v2/order/info/" + order_master_oid;
+                string result = CommonProxy.Post(url, JsonConvert.SerializeObject(callbackData,new JsonSerializerSettings() { NullValueHandling=NullValueHandling.Ignore}));
                 return result;
             }
             catch (Exception ex)

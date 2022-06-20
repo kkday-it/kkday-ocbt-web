@@ -446,7 +446,7 @@ namespace KKday.Web.OCBT.Models.Model.CartBooking
     //最後要寫入booking的內容
     public class CusDataInfo
     {
-        public bool isSave { get; set; }
+        public bool? isSave { get; set; }
         public string friendOid { get; set; }
         public englishNameInfo englishName { get; set; }
         public string gender { get; set; }
@@ -516,7 +516,7 @@ namespace KKday.Web.OCBT.Models.Model.CartBooking
 
     public class foodAllergyInfo
     {
-        public Boolean isFoodAllergy { get; set; }
+        public bool? isFoodAllergy { get; set; }
         public string allergenList { get; set; }
     }
     public class SkuModel
