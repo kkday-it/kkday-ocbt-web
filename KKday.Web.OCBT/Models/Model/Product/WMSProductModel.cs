@@ -8,7 +8,9 @@ namespace KKday.Web.OCBT.Models.Model.Product
         public string version { get; set; }
         public string timezone { get; set; }
         public List<int> pkgs { get; set; }
-
+        public GoDateSetting go_date_setting { get; set; }
+        public string prod_name { get; set; }//bookinginfo需要
+        
     }
     public class WMSPackageModel
     {
@@ -54,5 +56,15 @@ namespace KKday.Web.OCBT.Models.Model.Product
         public Dictionary<string, double?> cost { get; set; }
         public Dictionary<string, int?> remain_qty { get; set; }
         public Dictionary<string, double> b2d_price { get; set; }
+    }
+    public class GoDateSetting
+    {
+        public Days days { get; set; }
+        public string type { get; set; }
+    }
+    public class Days
+    {
+        public int max { get; set; }
+        public int min { get; set; }
     }
 }

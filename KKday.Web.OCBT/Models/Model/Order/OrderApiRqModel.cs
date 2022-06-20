@@ -9,7 +9,7 @@ namespace KKday.Web.OCBT.Models.Model.Order
         public string userOid { get; set; }
         public string ver { get; set; }
         public string ipaddress { get; set; }
-        public Dictionary<string,string> json { get; set; }
+        public Dictionary<string,object> json { get; set; }
     }
 
 

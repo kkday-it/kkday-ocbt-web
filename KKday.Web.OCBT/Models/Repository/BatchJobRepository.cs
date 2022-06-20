@@ -9,6 +9,7 @@ using KKday.Web.OCBT.Models.Model.Order;
 using KKday.Web.OCBT.Models.Repository;
 using KKday.Web.OCBT.Proxy;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace KKday.Web.OCBT.Models.Repository
 {
@@ -17,10 +18,12 @@ namespace KKday.Web.OCBT.Models.Repository
 
         private readonly ComboBookingRepository _comboBookingRepos;
         private readonly OrderProxy _orderProxy;
-        public BatchJobRepository(ComboBookingRepository comboBookingRepos, OrderProxy orderProxy)
+        private readonly SlackHelper _slack;
+        public BatchJobRepository(ComboBookingRepository comboBookingRepos, OrderProxy orderProxy,SlackHelper slack)
         {
             _comboBookingRepos = comboBookingRepos;
             _orderProxy = orderProxy;
+            _slack = slack;
         }
 
 
@@ -68,6 +71,10 @@ group by a.booking_mst_xid,a.order_mid,a.go_date,a.booking_mst_order_status,a.bo
                         ipaddress = _comboBookingRepos.GetLocalIPAddress()
                     };
 
+                    Dictionary<string, object> json = new Dictionary<string, object>();
+                    List<string> orderMid = new List<string>(); orderMid.Add(parent.order_mid);
+                    json.Add("orderMidList", orderMid);
+
                     string url = $"{Website.Instance.Configuration["ApiUrl:JAVA"]}v2/order/info/relastionMapping/" + parent.order_mid;
                     string result= _orderProxy.Post(url, JsonConvert.SerializeObject(orderApi,
                                 Newtonsoft.Json.Formatting.None,
@@ -107,6 +114,15 @@ group by a.booking_mst_xid,a.order_mid,a.go_date,a.booking_mst_order_status,a.bo
                                             NullValueHandling = NullValueHandling.Ignore
                                         }), guidKey);
 
+                            Website.Instance.logger.Fatal($"BatchJobRepository_SetParentBack_result:order_mid:{parent.order_mid}:{result}");
+
+                            var rs = JObject.Parse(result);
+                            if (rs["content"]["result"]?.ToString() != "0000")
+                            {
+                                //警示
+                                _slack.SlackPost(guidKey, "SetParentBack", "BatchJobRepository/SetParentBack", $"order_mid:{parent.order_mid},SetParentBack回覆失敗", $"Result ={ result}");
+                            }
+
                             this.UdpIsBack(guidKey, parent.booking_mst_xid, true);
                         }
                         else if (mapping.orderList.Select(x => x.orderStatus == "BACK").Count() > 1)
@@ -124,6 +140,14 @@ group by a.booking_mst_xid,a.order_mid,a.go_date,a.booking_mst_order_status,a.bo
                                             {
                                                 NullValueHandling = NullValueHandling.Ignore
                                             }), guidKey);
+                                Website.Instance.logger.Fatal($"BatchJobRepository_SetParentBack_result:order_mid:{parent.order_mid}:{result}");
+
+                                var rs = JObject.Parse(result);
+                                if (rs["content"]["result"]?.ToString() != "0000")
+                                {
+                                    //警示
+                                    _slack.SlackPost(guidKey, "SetParentBack", "BatchJobRepository/SetParentBack", $"order_mid:{parent.order_mid},SetParentBack回覆失敗", $"Result ={ result}");
+                                }
                                 this.UdpIsBack(guidKey, parent.booking_mst_xid, true);
                             }
                         }

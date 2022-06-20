@@ -5,8 +5,8 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
 
     public class ComboSupRequestModel
     {
-        public string request_uuid { get; set; }
-        public string source_id { get; set; }
+        public string requestUuid { get; set; }
+        public string sourceId { get; set; }
     }
 
 
@@ -19,12 +19,12 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
 
     public class ComboSupResponseDataModel
     {
-        public List<int> supplier_oid { get; set; }
+        public List<int> supplierOid { get; set; }
     }
 
     public class ChkCancelRequestModel : ComboSupRequestModel
     {
-        public string order_mid { get; set; }
+        public string orderMid { get; set; }
     }
 
     public class ChkCancelResponseModel : ResponseJson
