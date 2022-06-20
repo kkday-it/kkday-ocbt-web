@@ -15,7 +15,7 @@ namespace KKday.Web.OCBT.Models.Model.Order
     public class OrderModuleDataModel
     {
         public string moduleType { get; set; }
-        public ModuleModel moduleData { get; set; }
+        public List<ModuleModel> moduleData { get; set; }
 
     }
     public class ModuleModel
