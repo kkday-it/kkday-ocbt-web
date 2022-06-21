@@ -220,7 +220,7 @@ where booking_dtl_xid=@booking_dtl_xid";
             }
         }
         #endregion
-        public void CallBackJava(ResponseJson jsonData,string order_mid="")
+        public void CallBackJava(RequestJson jsonData,string order_mid="")
         {
             try
             {
@@ -236,7 +236,7 @@ where booking_dtl_xid=@booking_dtl_xid";
                 }
                 if (!isCallBack)//只有沒有is_callback過的才能打java
                 {
-                    ResponseJavaModel callbackData = new ResponseJavaModel
+                    RequestJavaModel callbackData = new RequestJavaModel
                     {
                         apiKey = Website.Instance.Configuration["KKdayAPI:Body:ApiKey"],
                         userOid = Website.Instance.Configuration["KKdayAPI:Body:UserOid"],
@@ -261,15 +261,15 @@ where booking_dtl_xid=@booking_dtl_xid";
             catch (Exception ex)
             {
                 Website.Instance.logger.Info($"CallBackJava Error message:{ex.Message},stacktrace:{ex.StackTrace}");
-                ResponseJavaModel callbackData = new ResponseJavaModel
+                RequestJavaModel callbackData = new RequestJavaModel
                 {
                     apiKey = Website.Instance.Configuration["KKdayAPI:Body:ApiKey"],
                     userOid = Website.Instance.Configuration["KKdayAPI:Body:UserOid"],
                     locale = "zh-tw",
                     ipaddress = GetLocalIPAddress(),
-                    json = new ResponseJson
+                    json = new RequestJson
                     {
-                        metadata=new ResponseMetaModel
+                        metadata=new RequesteMetaModel
                         {
                             status="9999",
                             description="系統異常"
@@ -302,10 +302,10 @@ where booking_dtl_xid=@booking_dtl_xid";
                 #region 判斷母單資訊
                 if (getMstModel != null && getMstModel?.booking_mst_order_status == "GL" && getMstModel?.booking_mst_voucher_status == "GL")//確認不為null與狀態都為GL
                 {
-                    ResponseJson jsonData = new ResponseJson
+                    RequestJson jsonData = new RequestJson
                     {
                         orderMid = getMstModel?.order_mid,
-                        metadata = new ResponseMetaModel
+                        metadata = new RequesteMetaModel
                         {
                             status = "2008",
                             description = "母子訂單已曾順利完成作業"
@@ -377,9 +377,9 @@ where booking_dtl_xid=@booking_dtl_xid";
                 if (ComboData.meta.status != "100000")//取得combo產品失敗
                 {
                     Website.Instance.logger.Info($"ComboBookingFlow GetComboProd error. request={JsonConvert.SerializeObject(CartItemModelrs)},return={JsonConvert.SerializeObject(ComboData)}");
-                    CallBackJava(new ResponseJson
+                    CallBackJava(new RequestJson
                     {
-                        metadata = new ResponseMetaModel
+                        metadata = new RequesteMetaModel
                         {
                             status = "2003",
                             description = "OCBT查詢子商品對應明細失敗"
@@ -391,9 +391,9 @@ where booking_dtl_xid=@booking_dtl_xid";
                 if (FAData.metadata.status != "AD00")
                 {
                     Website.Instance.logger.Info($"ComboBookingFlow GetReceiveMaster error. orderOid={queueModel.order.orderOid},return={JsonConvert.SerializeObject(FAData)}");
-                    CallBackJava(new ResponseJson
+                    CallBackJava(new RequestJson
                     {
-                        metadata = new ResponseMetaModel
+                        metadata = new RequesteMetaModel
                         {
                             status = "2010",
                             description = "取得母訂單的分帳公司失敗，無法訂購"
@@ -422,9 +422,9 @@ where booking_dtl_xid=@booking_dtl_xid";
                             if (PkgModel.result != "0000")
                             {
                                 Website.Instance.logger.Info($"ComboBookingFlow QueryPackage error response={JsonConvert.SerializeObject(PkgModel)}");
-                                CallBackJava(new ResponseJson
+                                CallBackJava(new RequestJson
                                 {
-                                    metadata = new ResponseMetaModel
+                                    metadata = new RequesteMetaModel
                                     {
                                         status = "2004",
                                         description = "OCBT查詢子商品失敗 （下架或其他原因）"
@@ -518,9 +518,9 @@ where booking_dtl_xid=@booking_dtl_xid";
                 if (bookingConfirm.result != "0000")
                 {
                     Website.Instance.logger.Info($"ComboBookingFlow confirmBooking error. request={JsonConvert.SerializeObject(cartBookingValid)},response={JsonConvert.SerializeObject(bookingConfirm)}");
-                    CallBackJava(new ResponseJson
+                    CallBackJava(new RequestJson
                     {
-                        metadata = new ResponseMetaModel
+                        metadata = new RequesteMetaModel
                         {
                             status = "2002",
                             description = "OCBT成立訂單失敗"
@@ -540,9 +540,9 @@ where booking_dtl_xid=@booking_dtl_xid";
                         UpdateDtlStatus(x);
                     });
                     Website.Instance.logger.Info($"ComboBookingFlow CartBooking error.request={JsonConvert.SerializeObject(cartBooking)}, response={JsonConvert.SerializeObject(cartbookingRs)}");
-                    CallBackJava(new ResponseJson
+                    CallBackJava(new RequestJson
                     {
-                        metadata = new ResponseMetaModel
+                        metadata = new RequesteMetaModel
                         {
                             status = "2002",
                             description = "OCBT成立訂單失敗"
@@ -574,9 +574,9 @@ where booking_dtl_xid=@booking_dtl_xid";
             catch (Exception ex)//跳出錯誤
             {
                 Website.Instance.logger.Info($"ComboBookingFlow error {queue} error:{ex.Message},{ex.StackTrace}");
-                CallBackJava(new ResponseJson
+                CallBackJava(new RequestJson
                 {
-                    metadata = new ResponseMetaModel
+                    metadata = new RequesteMetaModel
                     {
                         status = "9999",
                         description = "系統異常"

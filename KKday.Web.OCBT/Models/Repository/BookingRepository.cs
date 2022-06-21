@@ -302,14 +302,14 @@ namespace KKday.Web.OCBT.Models.Repository
             try
             {
                 string deviceId = Guid.NewGuid().ToString();
-                ResponseJavaModel callbackData = new ResponseJavaModel
+                RequestJavaModel callbackData = new RequestJavaModel
                 {
                     apiKey = Website.Instance.Configuration["KKdayAPI:Body:ApiKey"],
                     userOid = Website.Instance.Configuration["KKdayAPI:Body:UserOid"],
                     locale = "zh-tw",
                     ver = Website.Instance.Configuration["KKdayAPI:Body:Ver"],
                     ipaddress = "127.0.0.1",
-                    json = new ResponseJson
+                    json = new RequestJson
                     {
                         memberUuid = Website.Instance.Configuration["KKdayAPI:Body:MemberUuid"],
                         deviceId = deviceId,
