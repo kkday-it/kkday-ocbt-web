@@ -57,10 +57,10 @@ namespace KKday.Web.OCBT.V1
         /// <returns></returns>
         [HttpGet("ConvertBase64")]
         //[HttpPost("ConvertBase64")]
-        public ResponseJson ConvertBase64(string file_name)
+        public RequestJson ConvertBase64(string file_name)
         {
-            ResponseJson rs = new ResponseJson();
-            rs.metadata = new ResponseMetaModel
+            RequestJson rs = new RequestJson();
+            rs.metadata = new RequesteMetaModel
             {
                 status = "3002",
                 description = "回傳檔案失敗"
