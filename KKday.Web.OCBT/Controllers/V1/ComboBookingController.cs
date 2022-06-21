@@ -57,10 +57,10 @@ namespace KKday.Web.OCBT.V1
         /// <returns></returns>
         [HttpGet("ConvertBase64")]
         //[HttpPost("ConvertBase64")]
-        public RequestJson ConvertBase64(string file_name)
+        public ConvertBase64Rs ConvertBase64(RequestJson rq)
         {
-            RequestJson rs = new RequestJson();
-            rs.metadata = new RequesteMetaModel
+            ConvertBase64Rs rs = new ConvertBase64Rs();
+            rs.metadata = new ResponseMetaModel
             {
                 status = "3002",
                 description = "回傳檔案失敗"
@@ -69,15 +69,16 @@ namespace KKday.Web.OCBT.V1
             try
             {
                 // Get From S3
-                var getByte = _amazonS3Service.GetObject(file_name).Result;
+                var getByte = _amazonS3Service.GetObject(rq.fileUrl).Result;
                 if (getByte != null)
                 {
                     if (getByte.Success)
                     {
+                        rs.metadata.description = $"Json = {JsonConvert.SerializeObject(getByte)} , ";
                         // Byte[] Convert to Base64
                         rs.data.base64str = Convert.ToBase64String(getByte.DataBytes);
                         rs.metadata.status = "3001";
-                        rs.metadata.description = "回傳檔案成功";
+                        //rs.metadata.description = "回傳檔案成功";
                     }
                 }
             }
@@ -117,6 +118,8 @@ namespace KKday.Web.OCBT.V1
                                 rs.metadata.description = $"S3 Key = {upload.FileName}";
                                 rs.metadata.status = upload.ToString();
                             }
+
+                            var base64str = Convert.ToBase64String(bytes);
                         }
                     });
                 }
