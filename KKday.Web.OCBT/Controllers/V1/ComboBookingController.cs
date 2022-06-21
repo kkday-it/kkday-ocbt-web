@@ -55,36 +55,49 @@ namespace KKday.Web.OCBT.V1
         /// Get From S3, Byte[] Convert To Base64
         /// </summary>
         /// <returns></returns>
-        [HttpGet("ConvertBase64")]
-        //[HttpPost("ConvertBase64")]
-        public RequestJson ConvertBase64(string file_name)
+        [HttpPost("ConvertBase64")]
+        public ConvertBase64Rs ConvertBase64([FromBody] ConvertBase64Rq rq)
         {
-            RequestJson rs = new RequestJson();
-            rs.metadata = new RequesteMetaModel
+            ConvertBase64Rs rs = new ConvertBase64Rs();
+            rs.metadata = new ResponseMetaModel
             {
                 status = "3002",
-                description = "回傳檔案失敗"
+                description = "回傳檔案失敗:"
             };
 
             try
             {
-                // Get From S3
-                var getByte = _amazonS3Service.GetObject(file_name).Result;
-                if (getByte != null)
+                if (string.IsNullOrEmpty(rq.fileUrl))
                 {
-                    if (getByte.Success)
+                    rs.metadata.description += "fileUrl can not null";
+                }
+                else
+                {
+                    // Rq Log
+                    Website.Instance.logger.Info($"ComboBooking Start Get S3: FileName = {rq.fileUrl}");
+                    // Get From S3
+                    var getByte = _amazonS3Service.GetObject(rq.fileUrl).Result;
+                    // Rs Log
+                    Website.Instance.logger.Info($"Get S3 Rq = {JsonConvert.SerializeObject(getByte)}");
+                    if (getByte != null)
                     {
-                        // Byte[] Convert to Base64
-                        rs.data.base64str = Convert.ToBase64String(getByte.DataBytes);
-                        rs.metadata.status = "3001";
-                        rs.metadata.description = "回傳檔案成功";
+                        if (getByte.Success)
+                        {
+                            rs.metadata.status = "3001";
+                            rs.metadata.description = "回傳檔案成功";
+                            // Byte[] Convert to Base64
+                            rs.data = new ResponseDataModel
+                            {
+                                base64str = Convert.ToBase64String(getByte.DataBytes)
+                            };
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
-                //Website.Instance.logger.Fatal($"ComboBooking_ChkCancel_exception:GuidKey ={rq?.request_uuid}, Message={ex.Message}, StackTrace={ex.StackTrace}");
-                rs.metadata.description += $"Msg = {ex.Message} , StackTrace = {ex.StackTrace}";
+                Website.Instance.logger.Fatal($"ComboBooking_ConvertBase64_Exception:GuidKey ={rq?.requestUuid}, Message={ex.Message}, StackTrace={ex.StackTrace}");
+                rs.metadata.description += $" Msg = {ex.Message} , StackTrace = {ex.StackTrace}";
             }
 
             return rs;
@@ -117,6 +130,8 @@ namespace KKday.Web.OCBT.V1
                                 rs.metadata.description = $"S3 Key = {upload.FileName}";
                                 rs.metadata.status = upload.ToString();
                             }
+
+                            var base64str = Convert.ToBase64String(bytes);
                         }
                     });
                 }

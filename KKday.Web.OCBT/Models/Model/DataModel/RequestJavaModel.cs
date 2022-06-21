@@ -41,5 +41,9 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
         public string fileExtention { get; set; }
         public string result { get; set; }
     }
-
+    public class ConvertBase64Rq
+    {
+        public string requestUuid { get; set; }
+        public string fileUrl { get; set; } // ConvertBase64用
+    }
 }
