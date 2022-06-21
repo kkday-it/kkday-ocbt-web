@@ -36,8 +36,10 @@ namespace KKday.Web.OCBT.Service
         }
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            
-            _timer = new Timer(DoWorkAsync, cancellationToken, TimeSpan.Zero, TimeSpan.FromSeconds(30));
+            if (Website.Instance.Configuration["Switch"] == "ON")
+            {
+                _timer = new Timer(DoWorkAsync, cancellationToken, TimeSpan.Zero, TimeSpan.FromSeconds(30));
+            }
             return Task.CompletedTask;
         }
         public Task StopAsync(CancellationToken cancellationToken)
