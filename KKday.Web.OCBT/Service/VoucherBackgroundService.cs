@@ -6,6 +6,7 @@ using KKday.Web.OCBT.AppCode;
 using KKday.Web.OCBT.Models.Model.DataModel;
 using KKday.Web.OCBT.Models.Repository;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 
 namespace KKday.Web.OCBT.Service
 {
@@ -28,8 +29,6 @@ namespace KKday.Web.OCBT.Service
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            var keyforOrder = "ComboBookingVoucher";
-            var msg = _redisHelper.Pop(keyforOrder);
             // Get Voucher
             _timer1 = new Timer(DoWork, null, TimeSpan.Zero, TimeSpan.FromMinutes(10));
             // 每分鐘檢查=>母單已超過時間但is_callback=false
@@ -41,90 +40,105 @@ namespace KKday.Web.OCBT.Service
         {
             return Task.CompletedTask;
         }
-
+        /// <summary>
+        /// Get Voucher
+        /// </summary>
+        /// <param name="state"></param>
         private void DoWork(object state)
         {
             try
             {
                 while (true)
                 {
-                    // 模擬Dequeue from ConcurrentList<T>
-                    var queue = new string[] { "22KK272931961" };
-                    // 取出母單
-                    var mainOrders = _orderRepos.QueryBookingMst(queue);
-                    foreach(var main in mainOrders.order_mst_list)
+                    // Get From RedisQ
+                    var keyforOrder = "ComboBookingVoucher";
+                    var getQueue = _redisHelper.Pop(keyforOrder);
+                    if (getQueue.HasValue)
                     {
-                        var voucherDeadline = Convert.ToDateTime(main.monitor_start_datetime).AddMinutes(main.voucher_deadline);
-
-                        // 取出應處理的子單
-                        var subOrders = _orderRepos.FetchOrderDtlData(main.booking_mst_xid.ToString(), voucherStatus: "PROCESS").order_dtl_list?.Select(x => x.order_mid).ToArray();
-                        if (subOrders != null)
+                        var queue = new string[] { JsonConvert.DeserializeObject<QueueModel>(getQueue).master_order_mid };
+                        // 取出母單
+                        var mainOrders = _orderRepos.QueryBookingMst(queue);
+                        foreach (var main in mainOrders.order_mst_list)
                         {
-                            // 應處理的子單筆數
-                            var voucher_count = subOrders.Count();
-                            // Call WMS: 取訂單明細
-                            var _subOrders = _orderRepos.QueryOrders(subOrders);
-                            foreach(var sub in _subOrders.order)
+                            // 暫定=>沒填 Default 等待20min
+                            var deadLine = main.voucher_deadline == 0 ? 20 : main.voucher_deadline;
+                            var voucherDeadline = Convert.ToDateTime(main.monitor_start_datetime).AddMinutes(main.voucher_deadline);
+                            // 取出應處理的子單
+                            var subOrders = _orderRepos.FetchOrderDtlData(main.booking_mst_xid.ToString(), voucherStatus: "PROCESS").order_dtl_list?.Select(x => x.order_mid).ToArray();
+                            if (subOrders != null)
                             {
-                                if (sub.orderStatus == "GO_OK")
+                                // 應處理的子單筆數
+                                var voucher_count = subOrders.Count();
+                                // Call WMS: 取訂單明細
+                                var _subOrders = _orderRepos.QueryOrders(subOrders);
+                                foreach (var sub in _subOrders.order)
                                 {
-                                    // 1. 查詢憑證List
-                                    var voucher = _orderRepos.QueryVouchers(sub.orderMid);
-                                    if (voucher.file.Count > 0)
+                                    if (sub.orderStatus == "GO_OK")
                                     {
-                                        // 2. 下載憑證至memory
-                                        // 3. 上傳至 s3 (必須為PDF)
-                                        byte[] fileByte = null;
-                                        voucher.file.ForEach(x =>
+                                        // 1. 查詢憑證List
+                                        var voucherList = _orderRepos.QueryVouchers(sub.orderMid);
+                                        if (voucherList.file.Count > 0)
                                         {
-                                            var upload = _amazonS3Service.UploadObject(x.file_name, "application/pdf", fileByte).Result;
-                                        });
-                                        // 4. 更改子單voucher_status='VOUCHER_OK'
-                                        var updVoucher = _orderRepos.UpdateDtlVoucherStatus(sub.orderMid, "VOUCHER_OK");
-                                        if (updVoucher.result == "0000") voucher_count--;
-                                    }
-                                    else
-                                    {
-                                        // 取無憑證=>紀錄Kinbana Log 
-                                        Website.Instance.logger.Fatal($"NonVoucher MainOrderMid={main.order_mid}, SubOrderMid={sub.orderMid} ");
+                                            voucherList.file.ForEach(x =>
+                                            {
+                                                // 2. 下載憑證至memory
+                                                var file = _orderRepos.DownloadVoucher(sub.orderMid, x.order_file_id);
+                                                if (file.result == "00" && file.result_msg == "OK")
+                                                {
+                                                    var a = file.file.FirstOrDefault().content_type;
+                                                    byte[] bytes = Convert.FromBase64String(file.file.First().encode_str);
+                                                    // 3. 上傳至 s3 (必須為PDF)
+                                                    var upload = _amazonS3Service.UploadObject(x.file_name, "application/pdf", bytes).Result;
+                                                }
+                                            });
+
+                                            // 4. 更改子單voucher_status='VOUCHER_OK'
+                                            var updVoucher = _orderRepos.UpdateDtlVoucherStatus(sub.orderMid, "VOUCHER_OK");
+                                            if (updVoucher.result == "0000") voucher_count--;
+                                        }
+                                        else
+                                        {
+                                            // 取無憑證=>紀錄Kinbana Log 
+                                            Website.Instance.logger.Fatal($"NonVoucher MainOrderMid={main.order_mid}, SubOrderMid={sub.orderMid} ");
+                                        }
                                     }
                                 }
-                            }
-                            // 所有子單處理完畢
-                            if (voucher_count == 0)
-                            {
-                                var updVoucher = _orderRepos.UpdateMstVoucherStatus(main.booking_mst_xid, "VOUCHER_OK");
-                                // CallBackJava
-                                RequestJson callBackJson = new RequestJson
+                                // 所有子單處理完畢
+                                if (voucher_count == 0)
                                 {
-                                    orderMid = main.order_mid,
-                                    metadata = new RequesteMetaModel
+                                    var updVoucher = _orderRepos.UpdateMstVoucherStatus(main.booking_mst_xid, "VOUCHER_OK");
+                                    // CallBackJava
+                                    RequestJson callBackJson = new RequestJson
                                     {
-                                        status = "2000",
-                                        description = "OCBT取得憑證OK"
-                                    }
-                                };
-                                _comboBookRepos.CallBackJava(callBackJson);
-                            }
-                            // 現在時間是否超過等待時間
-                            else if (DateTime.Now > voucherDeadline)
-                            {
-                                var updVoucher = _orderRepos.UpdateMstVoucherStatus(main.booking_mst_xid, "FAIL");
-                                // CallBackJava
-                                RequestJson callBackJson = new RequestJson
+                                        orderMid = main.order_mid,
+                                        metadata = new RequesteMetaModel
+                                        {
+                                            status = "2000",
+                                            description = "OCBT取得憑證OK"
+                                        }
+                                    };
+                                    _comboBookRepos.CallBackJava(callBackJson);
+                                }
+                                // 現在時間是否超過等待時間
+                                else if (DateTime.Now > voucherDeadline)
                                 {
-                                    orderMid = main.order_mid,
-                                    metadata = new RequesteMetaModel
+                                    var updVoucher = _orderRepos.UpdateMstVoucherStatus(main.booking_mst_xid, "FAIL");
+                                    // CallBackJava
+                                    RequestJson callBackJson = new RequestJson
                                     {
-                                        status = "",
-                                        description = ""
-                                    }
-                                };
-                                _comboBookRepos.CallBackJava(callBackJson);
-                            }
+                                        orderMid = main.order_mid,
+                                        metadata = new RequesteMetaModel
+                                        {
+                                            status = "",
+                                            description = ""
+                                        }
+                                    };
+                                    _comboBookRepos.CallBackJava(callBackJson);
+                                }
 
-                            // Sleep (1min)
-                            System.Threading.Thread.Sleep(new TimeSpan(0, 1, 0));
+                                // Sleep (1min)
+                                System.Threading.Thread.Sleep(new TimeSpan(0, 1, 0));
+                            }
                         }
                     }
                 }
@@ -149,7 +163,7 @@ namespace KKday.Web.OCBT.Service
                     if (!string.IsNullOrEmpty(x.monitor_start_datetime))
                     {
                         var sDateTime = Convert.ToDateTime(x.monitor_start_datetime);
-                        // 暫定沒填 Default 等待20min
+                        // 暫定=>沒填 Default 等待20min
                         var deadLine = x.voucher_deadline == 0 ? 20 : x.voucher_deadline;
                         if (DateTime.Now > sDateTime.AddMinutes(deadLine))
                         {
@@ -162,7 +176,6 @@ namespace KKday.Web.OCBT.Service
                                 {
                                     orderMid = x.order_mid
                                 };
-                                // 3. 通知b2d slack?
                             }
                         }
                     }
@@ -178,6 +191,11 @@ namespace KKday.Web.OCBT.Service
         {
             _timer1?.Dispose();
             _timer2?.Dispose();
+        }
+
+        public class QueueModel
+        {
+            public string master_order_mid { get; set; }
         }
     }
 }
