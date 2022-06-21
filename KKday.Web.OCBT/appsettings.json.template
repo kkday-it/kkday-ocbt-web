@@ -1,5 +1,5 @@
 {
-  "LOG4NET.FILE_PATHE": {
+"log4netPath": {
     "RollingFile": "{{ KK_SERVICE.OCBT_WEB.CUSTOM_VARS.DOTNET.APP_LOG_PATH }}{{ KK_SERVICE.OCBT_WEB.PREFIX }}.log"
   },
   "ConnectionStrings": {
@@ -13,5 +13,38 @@
   },
   "Redis":{
    "kkday":"{{ REDIS_ENV.CACHE_DATA.DOMAIN }}:{{ REDIS_ENV.CACHE_DATA.PORT }}"
+  },
+  "WMS_API": {
+    "URL": "{{ KK_SERVICE.B2D_API.PRIVATE_PROTOCOL}}://{{ KK_SERVICE.B2D_API.DOMAIN}}/intranet/", 
+    "CompanyData": {
+      "AccountXid": "## COMP_ACCOUNT_XID ##",
+      "CompanyXid": "## COMP_COMPANY_XID ##" 
+    }
+  },
+  "KKdayAPI": {
+    "Body": {
+      "ApiKey": "kkdayapi",
+      "UserOid": "5",
+      "Ver": "1.0.1",
+      "IPAddress": "127.0.0.1",
+      "MemberUuid": "## MEMBER_UUID ##",
+      "Token": "## MEMBER_TOKEN ##"
+    }
+  },
+  "AesCryptKey": "## AESCRYPT_KEY ##",
+  "MailTo": {
+    "Smtp_Host": "## SMTP_HOST ##"
+  },
+  "OAuth": {
+    "Url": "{{ KK_SERVICE.AUTH_SVC.PRIVATE_PROTOCOL }}://{{ KK_SERVICE.AUTH_SVC.DOMAIN }}",
+    "Token": "{{KK_SERVICE.AUTH_SVC.CUSTOM_VARS.KKDAY.READ_SECRET_KEY }}"
+  },
+  "COMBO_SETTING": {
+    "Prod": "{{ KK_SERVICE.PRODUCT_API.PRIVATE_PROTOCOL }}://{{ KK_SERVICE.PRODUCT_API.DOMAIN }}/",
+    "FA": "{{ KK_SERVICE.FA_API.PRIVATE_PROTOCOL }}://{{ KK_SERVICE.FA_API.DOMAIN }}/",
+    "JAVA": "{{ KK_SERVICE.API.PRIVATE_PROTOCOL }}://{{ KK_SERVICE.API.DOMAIN }}/",
+    "x-auth-id": "## PROD_X_AUTH_ID ##",
+    "x-auth-signature": "## PROD_X_AUTH_SIGNATURE ##",
+    "x-request_id": "## PROD_X_REQUEST_ID ##"
   }
 }

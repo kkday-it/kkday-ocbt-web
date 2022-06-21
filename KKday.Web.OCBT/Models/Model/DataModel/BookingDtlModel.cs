@@ -27,6 +27,7 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
     }
     public class SkuOid
     {
-        public string[] sku_oid { get; set; }
+        public string[] sku_oids { get; set; }
     }
+    
 }

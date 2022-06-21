@@ -42,15 +42,15 @@ namespace KKday.Web.OCBT.Models.Repository
             }
             if (!string.IsNullOrEmpty(rq.order_mid))
             {
-                filter += $" AND mst.order_mid={rq.order_mid}";
+                filter += $" AND mst.order_mid='{rq.order_mid}'";
             }
             if (!string.IsNullOrEmpty(rq.booking_mst_order_status))
             {
-                filter += $" AND mst.booking_mst_order_status={rq.booking_mst_order_status}";
+                filter += $" AND mst.booking_mst_order_status='{rq.booking_mst_order_status}'";
             }
             if (!string.IsNullOrEmpty(rq.booking_mst_voucher_status))
             {
-                filter += $" AND mst.booking_mst_voucher_status={rq.booking_mst_voucher_status}";
+                filter += $" AND mst.booking_mst_voucher_status='{rq.booking_mst_voucher_status}'";
             }
 
             return filter;
@@ -59,7 +59,11 @@ namespace KKday.Web.OCBT.Models.Repository
         {
             try
             {
-                string sql = @"SELECT * FROM BOOKING_MST mst WHERE 1=1 ";
+                string sql = @"SELECT booking_mst_xid,order_mid,order_oid,prod_oid,go_date,
+(case booking_model::text when '{}' then null else booking_model end) as booking_model ,
+(case combo_model::text when '{}' then null else combo_model end)as combo_model ,booking_mst_order_status,
+booking_mst_voucher_status,voucher_deadline,is_callback,is_back,is_need_back,monitor_start_datetime,create_user,create_datetime,modify_user,modify_datetime
+FROM BOOKING_MST mst WHERE 1=1 ";
                 sql += FilterMstData(rq);
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
@@ -79,17 +83,17 @@ namespace KKday.Web.OCBT.Models.Repository
             try
             {
                 string sql = @"INSERT INTO public.booking_mst(order_mid,order_oid,prod_oid,go_date,booking_model,booking_mst_order_status,booking_mst_voucher_status,
-is_callback,is_back,create_user,create_date)
-VALUES(:order_mid,:order_oid,:prod_oid,:booking_model,:booking_mst_order_status,:booking_mst_voucher_status,:is_callback,:is_back,:create_user,now())
+is_callback,is_back,create_user,create_datetime)
+VALUES(:order_mid,:order_oid,:prod_oid,:go_date,:booking_model,:booking_mst_order_status,:booking_mst_voucher_status,:is_callback,:is_back,:create_user,now())
 RETURNING booking_mst_xid";
 
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
-                    return conn.QuerySingle<int>(sql,rq);
+                    return conn.QuerySingle<int>(sql, rq);
                 }
 
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Website.Instance.logger.Info($"InsBookingMst order_mid {rq.order_mid} error:{ex.Message},{ex.StackTrace}");
                 throw ex;
@@ -158,6 +162,7 @@ RETURNING booking_mst_xid";
             {
                 string sql = @"SELECT * FROM BOOKING_DTL dtl WHERE 1=1 ";
                 sql += FilterDtlData(rq);
+                SqlMapper.AddTypeHandler(typeof(SkuOid), new ObjectJsonMapper());
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
                     conn.Open();
@@ -175,17 +180,18 @@ RETURNING booking_mst_xid";
         {
             try
             {
-                string sql = @"INSERT INTO public.BOOKING_DTL(booking_mst_xid,prod_oid,package_oid,item_oid,sku_oid,booking_qty,real_booking_qty,booking_dtl_order_status,
+                string sql = @"INSERT INTO public.booking_dtl(booking_mst_xid,prod_oid,package_oid,item_oid,sku_oid,real_booking_qty,booking_dtl_order_status,
 booking_dtl_voucher_status,order_master_oid,order_master_mid,create_datetime,create_user)
-VALUES(@booking_mst_xid,@prod_oid,@package_oid,@item_oid,@sku_oid,@booking_qty,@real_booking_qty,@booking_dtl_order_status,
-@booking_dtl_voucher_status,@order_master_oid,@order_master_mid,now(),@create_user);
-RETURNING booking_dtl_xid";
+VALUES(@booking_mst_xid,@prod_oid,@package_oid,@item_oid,@sku_oid::jsonb,@real_booking_qty,@booking_dtl_order_status,
+@booking_dtl_voucher_status,@order_master_oid,@order_master_mid,now(),@create_user);";
 
-
+                SqlMapper.AddTypeHandler(typeof(SkuOid), new ObjectJsonMapper());
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
                     conn.Open();
-                    return conn.Query<int>(sql).ToList();
+                    conn.Execute(sql, data);
+                    var getDtl = GetBookingDtlData(new BookingDtlModel() { booking_mst_xid = data.First().booking_mst_xid });
+                    return getDtl.Select(x => x.booking_dtl_xid).ToList();
                 }
             }
             catch (Exception ex)
@@ -257,8 +263,8 @@ where booking_dtl_xid=@booking_dtl_xid";
                 Website.Instance.logger.Info($"CallBackJava Error message:{ex.Message},stacktrace:{ex.StackTrace}");
                 ResponseJavaModel callbackData = new ResponseJavaModel
                 {
-                    apiKey = Website.Instance.Configuration["KKAPI_INPUT:API_KEY"],
-                    userOid = Website.Instance.Configuration["KKAPI_INPUT:USER_OID"],
+                    apiKey = Website.Instance.Configuration["KKdayAPI:Body:ApiKey"],
+                    userOid = Website.Instance.Configuration["KKdayAPI:Body:UserOid"],
                     locale = "zh-tw",
                     ipaddress = GetLocalIPAddress(),
                     json = new ResponseJson
@@ -280,7 +286,11 @@ where booking_dtl_xid=@booking_dtl_xid";
         {
             try
             {
-                
+                Website.Instance.logger.Info($"ComboBookingFlow queue={queue}");
+                if (string.IsNullOrEmpty(queue))
+                {
+                    throw new Exception("ComboBookingFlow error");
+                }
                 //將queue轉成dataModel
                 var queueModel = JsonConvert.DeserializeObject<BookingRequestModel>(queue);
                 #region 查找母單資訊
@@ -323,7 +333,7 @@ where booking_dtl_xid=@booking_dtl_xid";
                         order_mid = queueModel.order?.orderMid,
                         order_oid = queueModel.order.orderOid,
                         prod_oid = (int)queueModel.order.prodOid,
-                        go_date = queueModel.order?.begLstGoDt,
+                        go_date = Convert.ToDateTime(queueModel.order?.begLstGoDt).ToString("yyyyMMdd"),
                         //booking_model
                         //combo_model
                         booking_mst_order_status = "NW",
@@ -333,7 +343,7 @@ where booking_dtl_xid=@booking_dtl_xid";
                         is_back = false
                     };
                     getMstModel.booking_mst_xid = InsertBookingMst(getMstModel);//將插入的mst_xid回傳給mstModel
-                    
+
                 }
                 #region 取得product的comboBooking
                 ComboCartItemsModel cartItem = new ComboCartItemsModel
@@ -343,9 +353,9 @@ where booking_dtl_xid=@booking_dtl_xid";
                     go_date = queueModel?.order?.begLstGoDt,
                     back_date = queueModel?.order?.endLstBackDt,
                     event_time = queueModel?.order?.eventTime,
-                    skus= new List<ComboSkusModel>()
+                    skus = new List<ComboSkusModel>()
                 };
-                
+
                 foreach (var sku in queueModel?.order?.lstPrice)
                 {
                     cartItem.skus.Add(new ComboSkusModel
@@ -354,7 +364,7 @@ where booking_dtl_xid=@booking_dtl_xid";
                         qty = sku.qty
                     });
                 }
-                
+
                 ComboRequestModel CartItemModelrs = new ComboRequestModel
                 {
                     cart_items = new List<ComboCartItemsModel>()
@@ -362,7 +372,7 @@ where booking_dtl_xid=@booking_dtl_xid";
                 };
                 CartItemModelrs.cart_items.Add(cartItem);
                 var ComboData = GetComboProd(CartItemModelrs);//取得ComboData的資料
-                
+
                 #endregion
                 if (ComboData.meta.status != "100000")//取得combo產品失敗
                 {
@@ -388,7 +398,7 @@ where booking_dtl_xid=@booking_dtl_xid";
                             status = "2010",
                             description = "取得母訂單的分帳公司失敗，無法訂購"
                         }
-                    },queueModel.order.orderMid);
+                    }, queueModel.order.orderMid);
                     throw new Exception("ComboBookingFlow GetReceiveMaster error.");
 
                 }
@@ -403,12 +413,12 @@ where booking_dtl_xid=@booking_dtl_xid";
                 {
                     foreach (var prodDtl in ComboData.data)//取得ComboData.Data中的資訊
                     {
-                        foreach (var prod in prodDtl.combo_info.skus.Where(x => x.sku_oid ==skuOid.skuOid).Select(y=>y.combo_prod).First())
+                        foreach (var prod in prodDtl.combo_info.skus.Where(x => x.sku_oid == skuOid.skuOid).Select(y => y.combo_prod).First())
                         {
                             var ProdModel = QueryProduct(prod.prod_oid,
-                        FAData.data.fa_vouch_currency, queueModel.order.memberLang, queueModel.order.contactCountryCd);//取得產品資訊與產品版本
-                            var PkgModel = QueryPackage(prod.prod_oid,prod.pkg_oid,
-                        FAData.data.currency, queueModel.order.memberLang, queueModel.order.contactCountryCd, queueModel.order.begLstGoDt, queueModel.order.endLstBackDt);
+                        FAData.data.FirstOrDefault().fa_vouch_currency, queueModel.order.memberLang, queueModel.order.contactCountryCd);//取得產品資訊與產品版本
+                            var PkgModel = QueryPackage(prod.prod_oid, prod.pkg_oid,
+                        FAData.data.FirstOrDefault().currency, queueModel.order.memberLang, queueModel.order.contactCountryCd, queueModel.order.begLstGoDt, queueModel.order.endLstBackDt);
                             if (PkgModel.result != "0000")
                             {
                                 Website.Instance.logger.Info($"ComboBookingFlow QueryPackage error response={JsonConvert.SerializeObject(PkgModel)}");
@@ -426,34 +436,34 @@ where booking_dtl_xid=@booking_dtl_xid";
                             {
 
                                 var ProdModuleModel = QueryModule(prod.prod_oid,
-                                FAData.data.currency, queueModel.order.memberLang, queueModel.order.contactCountryCd);//取得產品模組
-                                var insertdata= new BookingDtlModel()
+                                FAData.data.FirstOrDefault().currency, queueModel.order.memberLang, queueModel.order.contactCountryCd);//取得產品模組
+                                var insertdata = new BookingDtlModel()
                                 {
                                     booking_mst_xid = getMstModel.booking_mst_xid,
                                     prod_oid = Convert.ToInt32(prod.prod_oid),
                                     package_oid = Convert.ToInt32(prod.pkg_oid),
                                     item_oid = Convert.ToInt32(prod.item_oid),
-                                    sku_oid = new SkuOid() { sku_oid = prod.skus.Select(x => x.sku_oid).ToArray() },
+                                    sku_oid = new SkuOid() { sku_oids = prod.skus.Select(x => x.sku_oid).ToArray() },
                                     booking_qty = skuOid.qty,//母單sku下的數量
-                                    real_booking_qty=0,//在外層統計的時候再計算實際數量
-                                    booking_dtl_order_status="NW",
-                                    booking_dtl_voucher_status="NW",
-                                    order_master_mid="",
-                                    order_master_oid=0
+                                    real_booking_qty = 0,//在外層統計的時候再計算實際數量
+                                    booking_dtl_order_status = "NW",
+                                    booking_dtl_voucher_status = "NW",
+                                    order_master_mid = "",
+                                    order_master_oid = 0
 
                                 };//插入DtlData
                                 var bookingModel = _bookingRepos.SetBookingModel(ProdModuleModel, queueModel.order);//取得訂購的模組
                                 //補上bookingInfo
                                 bookingModel.bookingInfo = new Model.CartBooking.bookingInfoModel
                                 {
-                                    time_zone=ProdModel.timezone,
-                                    prod_name=ProdModel.prod_name,
-                                    pkg_name=PkgModel.pkg_name,
-                                    prod_oid=Convert.ToInt64(prod.prod_oid),
-                                    pkg_oid=Convert.ToInt64(prod.pkg_oid),
-                                    skus=new List<Model.CartBooking.BookingInfoConfirmSku>(),
-                                    is_open_date=(ProdModel.go_date_setting.type=="03"||ProdModel.go_date_setting.type=="04")?true:false,
-                                    pay_type="arType"
+                                    time_zone = ProdModel.timezone,
+                                    prod_name = ProdModel.prod_name,
+                                    pkg_name = PkgModel.pkg_name,
+                                    prod_oid = Convert.ToInt64(prod.prod_oid),
+                                    pkg_oid = Convert.ToInt64(prod.pkg_oid),
+                                    skus = new List<Model.CartBooking.BookingInfoConfirmSku>(),
+                                    is_open_date = (ProdModel.go_date_setting.type == "03" || ProdModel.go_date_setting.type == "04") ? true : false,
+                                    pay_type = "arType"
                                 };
                                 if (ProdModel.go_date_setting.type == "03" || ProdModel.go_date_setting.type == "04")
                                 {
@@ -468,7 +478,7 @@ where booking_dtl_xid=@booking_dtl_xid";
                                     has_event = (bool?)PkgModel.item.First().has_event,
                                     begin_date = queueModel.order.begLstGoDt,
                                     end_date = queueModel.order.endLstBackDt,
-                                    currency = FAData.data.currency,
+                                    currency = FAData.data.FirstOrDefault().currency,
                                     ori_guidkey = PkgModel.guid,//價錢的快取
                                     price_token = Guid.NewGuid().ToString(),//存取至給Java驗證的Price
                                     prod_oid = prod.prod_oid,
@@ -476,7 +486,7 @@ where booking_dtl_xid=@booking_dtl_xid";
                                     item_oid = prod.item_oid,
                                     skus = new List<Model.CartBooking.ConfirmSku>(),
                                     locale = queueModel.order.memberLang,
-                                    go_date_type= ProdModel.go_date_setting.type
+                                    go_date_type = ProdModel.go_date_setting.type
                                 };
                                 double tempTotalPrice = 0;
                                 int? dtlTotalQty = 0;
@@ -500,82 +510,9 @@ where booking_dtl_xid=@booking_dtl_xid";
                         }
                     }
                 }
-
-
-                //foreach (var prod in ComboData.data)
-                //{
-                //    var ProdModel = QueryProduct(prod.combo_info.prod_oid,
-                //        FAData.data.fa_vouch_currency, queueModel.order.memberLang, queueModel.order.contactCountryCd);//取得產品資訊與產品版本
-
-                //    var PkgModel = QueryPackage(prod.combo_info.prod_oid,prod.combo_info.pkg_oid,
-                //        FAData.data.currency, queueModel.order.memberLang, queueModel.order.contactCountryCd, queueModel.order.begLstGoDt, queueModel.order.endLstBackDt);
-                //    if (PkgModel.result != "0000")
-                //    {
-                //        Website.Instance.logger.Info($"ComboBookingFlow QueryPackage error response={JsonConvert.SerializeObject(PkgModel)}");
-                //        CallBackJava(new ResponseJson
-                //        {
-                //            metadata = new ResponseMetaModel
-                //            {
-                //                status = "2004",
-                //                description = "OCBT查詢子商品失敗 （下架或其他原因）"
-                //            }
-                //        }, queueModel.order.orderMid);
-                //        throw new Exception("ComboBookingFlow GetReceiveMaster error.");
-                //    }
-                //    else
-                //    {
-
-                //        var ProdModuleModel = QueryModule(prod.combo_info.prod_oid,
-                //        FAData.data.currency, queueModel.order.memberLang, queueModel.order.contactCountryCd);//取得產品模組
-                //        insertDtlData.Add(new BookingDtlModel
-                //        {
-                //            booking_mst_xid= getMstModel.booking_mst_xid,
-                //            prod_oid=Convert.ToInt32(prod.combo_info.prod_oid),
-                //            package_oid=Convert.ToInt32(prod.combo_info.pkg_oid),
-                //            item_oid=Convert.ToInt32(prod.combo_info.item_oid),
-                //            sku_oid=new SkuOid() { sku_oid=prod.combo_info.skus.Select(x=>x.sku_oid).ToArray()}
-
-                //        });
-                //        var bookingModel = _bookingRepos.SetBookingModel(ProdModuleModel, queueModel.order);//取得訂購的模組
-                //        cartBooking.Add(bookingModel);
-                //        Model.CartBooking.ConfirmProdInfoModel confirmOrder = new Model.CartBooking.ConfirmProdInfoModel()
-                //        {
-                //            prod_version=ProdModel.version,
-                //            time_zone=ProdModel.timezone,
-                //            has_event=(bool?)PkgModel.item.First().has_event,
-                //            begin_date=queueModel.order.begLstGoDt,
-                //            end_date=queueModel.order.endLstBackDt,
-                //            currency=FAData.data.currency,
-                //            ori_guidkey=PkgModel.guid,//價錢的快取
-                //            price_token=Guid.NewGuid().ToString(),//存取至給Java驗證的Price
-                //            prod_oid= prod.combo_info.prod_oid,
-                //            packege_oid=prod.combo_info.pkg_oid,
-                //            item_oid=prod.combo_info.item_oid,
-                //            skus=new List<Model.CartBooking.ConfirmSku>(),
-                //            locale=queueModel.order.memberLang,
-                //            //go_date_type 需要補
-                //        };
-                //        double tempTotalPrice = 0;
-                //        foreach (var skusData in prod.combo_info.skus)//將對應到的sku放進一筆訂單中的skus
-                //        {
-                //            confirmOrder.skus.Add(new Model.CartBooking.ConfirmSku {
-                //                price=1,
-                //                qty=skusData.qty,
-                //                sku_id=skusData.sku_oid
-                //            });
-                //            tempTotalPrice += (double)skusData.qty * 1;
-
-                //        }
-                //        confirmOrder.total_price = tempTotalPrice;
-                //        cartBookingValid.cartorder.Add(confirmOrder);
-
-                //    }
-
-                //}
-                //先將明細插入至db，如果數量大於十，代表無法做購物車
                 var dtlcount = InsertBookingDtl(insertDtlData);
                 cartBookingValid.adjprice_flag = true;
-                cartBookingValid.adjprice_type="01";//允許任意金額
+                cartBookingValid.adjprice_type = "01";//允許任意金額
                 cartBookingValid.token = Guid.NewGuid().ToString();//母單的金額
                 var bookingConfirm = _bookingRepos.confirmBooking(cartBookingValid);
                 if (bookingConfirm.result != "0000")
@@ -619,10 +556,10 @@ where booking_dtl_xid=@booking_dtl_xid";
                 int countwithorder = 0;
                 foreach (var bookingrq in cartBooking)
                 {
-                    var DtlList = bookingDtlList.Where(x => x.sku_oid.sku_oid == bookingrq.bookingInfo.skus.Select(x => x.sku_id).ToArray()).First();
+                    var DtlList = bookingDtlList.Where(x => x.sku_oid.sku_oids == bookingrq.bookingInfo.skus.Select(x => x.sku_id).ToArray()).First();
                     DtlList.order_master_mid = cartbookingRs.orde_master_mid;
                     DtlList.order_mid = cartbookingRs.orders[countwithorder].order_mid;
-                    DtlList.order_oid= Convert.ToInt32(cartbookingRs.orders[countwithorder].order_oid);
+                    DtlList.order_oid = Convert.ToInt32(cartbookingRs.orders[countwithorder].order_oid);
                     DtlList.booking_dtl_order_status = "GL";
                     UpdateDtlStatus(DtlList);
                 }
@@ -677,22 +614,23 @@ where booking_dtl_xid=@booking_dtl_xid";
                 throw ex;
             }
         }
-        public WMSPackageModel QueryPackage(string prod_oid,string pkg_oid,string currency, string locale, string state,string s_date,string e_date)
+        public WMSPackageModel QueryPackage(string prod_oid, string pkg_oid, string currency, string locale, string state, string s_date, string e_date)
         {
             try
             {
-                string url = $"{Website.Instance.Configuration["WMS_API:URL"]}v2/Product/QueryProd";
+                string url = $"{Website.Instance.Configuration["WMS_API:URL"]}v2/Product/QueryItemsPrice";
                 QueryWMSProductModel queryProduct = new QueryWMSProductModel
                 {
                     prod_no = prod_oid,
-                    pkg_no=pkg_oid,
+                    pkg_no = pkg_oid,
                     locale = locale,
-                    state=state,
+                    state = state,
                     currency = currency,
                     block = new List<string> { "PRODUCT", "PACKAGE", "PRODUCT-MARKETING" },
                     begin_date = s_date,
                     end_date = e_date,
-                    account_xid = Website.Instance.Configuration["WMS_API:CompanyData:AccountXid"]
+                    account_xid = Website.Instance.Configuration["WMS_API:CompanyData:AccountXid"],
+                    company_xid = Website.Instance.Configuration["WMS_API:CompanyData:CompanyXid"]
 
                 };
                 var ProductData = CommonProxy.Post(url, JsonConvert.SerializeObject(queryProduct));
@@ -733,8 +671,53 @@ where booking_dtl_xid=@booking_dtl_xid";
             try
             {
                 string url = $"{Website.Instance.Configuration["COMBO_SETTING:Prod"]}/GetComboInfo";
-                var responseMsg = CommonProxy.Post(url,JsonConvert.SerializeObject(rs));
-                return JsonConvert.DeserializeObject<ComboReturnModel>(responseMsg);
+                var responseMsg = CommonProxy.Post(url, JsonConvert.SerializeObject(rs));
+                ComboReturnModel response = new ComboReturnModel
+                {
+                    meta = new metaDataProdModel
+                    {
+                        status = "100000"
+                    },
+                    data = new List<ComboDataModel>()
+                };
+                response.data.Add(new ComboDataModel
+                {
+                    combo_info = new ComboInfoModel()
+                    {
+                        prod_oid = "112381",
+                        pkg_oid = "301357",
+                        item_oid = "46684",
+                        voucher_max_time = 10,
+                        skus = new List<ComboInfoSkusModel>()
+                        {
+                            new ComboInfoSkusModel()
+                            {
+                                sku_oid="0a1ddc70318f48bb8ee93bdc94d10efb",
+                                qty=1,
+                                combo_prod=new List<ComboProdModel>()
+                                {
+                                    new ComboProdModel()
+                                    {
+                                        prod_oid="112404",
+                                        pkg_oid="334714",
+                                        item_oid="80491",
+                                        skus=new List<ComboSkusModel>()
+                                        {
+                                            new ComboSkusModel
+                                            {
+                                                sku_oid="851f03fac941e008dcee324862ec28e0",
+                                                qty=1
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                //return JsonConvert.DeserializeObject<ComboReturnModel>(responseMsg);
+                return response;
             }
             catch (Exception ex)
             {
@@ -747,8 +730,8 @@ where booking_dtl_xid=@booking_dtl_xid";
         {
             try
             {
-                string url = $"{Website.Instance.Configuration[""]}api/v2/receive-master/list/by-order-master/{order_master_oid}";
-                var responseMsg = CommonProxy.Get(Guid.NewGuid().ToString(),url);
+                string url = $"{Website.Instance.Configuration["COMBO_SETTING:FA"]}api/v2/receive-master/list/by-order-master/{order_master_oid}";
+                var responseMsg = CommonProxy.Get(Guid.NewGuid().ToString(), url);
                 return JsonConvert.DeserializeObject<ReceiveListModel>(responseMsg);
             }
             catch (Exception ex)
