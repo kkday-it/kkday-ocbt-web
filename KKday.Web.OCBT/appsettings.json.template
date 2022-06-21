@@ -46,5 +46,6 @@
     "x-auth-id": "## PROD_X_AUTH_ID ##",
     "x-auth-signature": "## PROD_X_AUTH_SIGNATURE ##",
     "x-request_id": "## PROD_X_REQUEST_ID ##"
-  }
+  },
+  "Switch":"## SWITCH ##"
 }
