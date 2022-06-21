@@ -1,6 +1,6 @@
 {
 "log4netPath": {
-    "RollingFile": "{{ KK_SERVICE.OCBT_WEB.CUSTOM_VARS.DOTNET.APP_LOG_PATH }}{{ KK_SERVICE.OCBT_WEB.PREFIX }}.log"
+    "path": "{{ KK_SERVICE.OCBT_WEB.CUSTOM_VARS.DOTNET.APP_LOG_PATH }}{{ KK_SERVICE.OCBT_WEB.PREFIX }}.log"
   },
   "ConnectionStrings": {
     "NpgsqlConnection": "Host={{ DATABASE_ENV.OCBT_WEB.HOST }};Username={{ DATABASE_ENV.OCBT_WEB.USER.APPLICATION.NAME }};Password={{ DATABASE_ENV.OCBT_WEB.USER.APPLICATION.PASSWORD }};Database={{ DATABASE_ENV.OCBT_WEB.DB_NAME }};Port={{ DATABASE_ENV.OCBT_WEB.PORT }};"
@@ -46,5 +46,6 @@
     "x-auth-id": "## PROD_X_AUTH_ID ##",
     "x-auth-signature": "## PROD_X_AUTH_SIGNATURE ##",
     "x-request_id": "## PROD_X_REQUEST_ID ##"
-  }
+  },
+  "Switch":"## SWITCH ##"
 }
