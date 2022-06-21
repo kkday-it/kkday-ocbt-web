@@ -18,6 +18,7 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
         public string contactCountryCd { get; set; }
         public string contactEmail { get; set; }
         public string contactTelCd { get; set; }
+        public string telCountryCd { get; set; }
         public string contactTel { get; set; }
         public string contactFirstname { get; set; }
         public string contactLastname { get; set; }

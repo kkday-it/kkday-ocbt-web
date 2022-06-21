@@ -78,6 +78,7 @@ namespace KKday.Web.OCBT.Models.Model.CartBooking
         public string voiceGuideLang { get; set; }//語音導覽語言
         public invoiceModel invoiceInfo { get; set; }
         public bookingInfoModel bookingInfo { get; set; }
+        public List<SkuModel> skus { get; set; }
         #endregion
 
     }
