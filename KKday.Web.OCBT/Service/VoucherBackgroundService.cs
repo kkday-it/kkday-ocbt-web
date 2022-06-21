@@ -95,10 +95,10 @@ namespace KKday.Web.OCBT.Service
                             {
                                 var updVoucher = _orderRepos.UpdateMstVoucherStatus(main.booking_mst_xid, "VOUCHER_OK");
                                 // CallBackJava
-                                ResponseJson callBackJson = new ResponseJson
+                                RequestJson callBackJson = new RequestJson
                                 {
                                     orderMid = main.order_mid,
-                                    metadata = new ResponseMetaModel
+                                    metadata = new RequesteMetaModel
                                     {
                                         status = "2000",
                                         description = "OCBT取得憑證OK"
@@ -111,10 +111,10 @@ namespace KKday.Web.OCBT.Service
                             {
                                 var updVoucher = _orderRepos.UpdateMstVoucherStatus(main.booking_mst_xid, "FAIL");
                                 // CallBackJava
-                                ResponseJson callBackJson = new ResponseJson
+                                RequestJson callBackJson = new RequestJson
                                 {
                                     orderMid = main.order_mid,
-                                    metadata = new ResponseMetaModel
+                                    metadata = new RequesteMetaModel
                                     {
                                         status = "",
                                         description = ""
@@ -158,7 +158,7 @@ namespace KKday.Web.OCBT.Service
                             if (upd.result == "0000")
                             {
                                 // 2. 觸發 CallBackJava
-                                ResponseJson callBackJson = new ResponseJson
+                                RequestJson callBackJson = new RequestJson
                                 {
                                     orderMid = x.order_mid
                                 };
