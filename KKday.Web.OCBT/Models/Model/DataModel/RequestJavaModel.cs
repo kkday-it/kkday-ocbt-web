@@ -22,7 +22,6 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
         public string memberUuid { get; set; }
         public string deviceId { get; set; }
         public string tokenKey { get; set; }
-        public string fileUrl { get; set; } // ConvertBase64用
     }
     public class RequesteMetaModel
     {
@@ -42,5 +41,9 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
         public string fileExtention { get; set; }
         public string result { get; set; }
     }
-
+    public class ConvertBase64Rq
+    {
+        public string requestUuid { get; set; }
+        public string fileUrl { get; set; } // ConvertBase64用
+    }
 }
