@@ -208,13 +208,13 @@ VALUES(@booking_mst_xid,@prod_oid,@package_oid,@item_oid,@sku_oid::jsonb,@real_b
         {
             try
             {
-                string sql = @"UPDATE BOOKING_DTL dtl SET booking_dtl_order_satus=@booking_dtl_order_status,
+                string sql = @"UPDATE BOOKING_DTL dtl SET booking_dtl_order_status=@booking_dtl_order_status,
 order_master_oid=@order_master_oid,order_master_mid=@order_master_mid,order_mid=@order_mid,order_oid=@order_oid,modify_datetime=now()
 where booking_dtl_xid=@booking_dtl_xid";
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
                     conn.Open();
-                    return conn.QuerySingle<int>(sql,data);
+                    return conn.Execute(sql,data);
                 }
             }
             catch (Exception ex)
@@ -600,7 +600,7 @@ where booking_dtl_xid=@booking_dtl_xid";
                 int countwithorder = 0;
                 foreach (var bookingrq in cartBooking)
                 {
-                    var DtlList = bookingDtlList.Where(x => x.sku_oid.sku_oids == bookingrq.bookingInfo.skus.Select(x => x.sku_id).ToArray()).First();
+                    var DtlList = bookingDtlList.Where(x => x.sku_oid.sku_oids.Except(bookingrq.skus.Select(x => x.sku_oid)).Count()==0).First();//判斷Sku_oid[]中是不是完全一樣
                     DtlList.order_master_mid = cartbookingRs.orde_master_mid;
                     DtlList.order_mid = cartbookingRs.orders[countwithorder].order_mid;
                     DtlList.order_oid = Convert.ToInt32(cartbookingRs.orders[countwithorder].order_oid);
