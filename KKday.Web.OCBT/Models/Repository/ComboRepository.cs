@@ -126,7 +126,7 @@ RETURNING booking_mst_xid";
 
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
-                    return conn.QuerySingle<int>(sql, new { order_mid, order_status, modify_user });
+                    return conn.Execute(sql, new { order_mid, order_status, modify_user });
                 }
 
             }
@@ -160,7 +160,11 @@ RETURNING booking_mst_xid";
         {
             try
             {
-                string sql = @"SELECT * FROM BOOKING_DTL dtl WHERE 1=1 ";
+                string sql = @"SELECT booking_dtl_xid,booking_mst_xid,prod_oid,package_oid,item_oid,sku_oid,
+real_booking_qty,booking_dtl_order_status,booking_dtl_voucher_status
+FROM BOOKING_DTL dtl WHERE 1=1 ";
+
+
                 sql += FilterDtlData(rq);
                 SqlMapper.AddTypeHandler(typeof(SkuOid), new ObjectJsonMapper());
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
@@ -418,7 +422,7 @@ where booking_dtl_xid=@booking_dtl_xid";
                             var ProdModel = QueryProduct(prod.prod_oid,
                         FAData.data.FirstOrDefault().fa_vouch_currency, queueModel.order.memberLang, queueModel.order.contactCountryCd);//取得產品資訊與產品版本
                             var PkgModel = QueryPackage(prod.prod_oid, prod.pkg_oid,
-                        FAData.data.FirstOrDefault().currency, queueModel.order.memberLang, queueModel.order.contactCountryCd, queueModel.order.begLstGoDt, queueModel.order.endLstBackDt);
+                        FAData.data.FirstOrDefault().fa_vouch_currency, queueModel.order.memberLang, queueModel.order.contactCountryCd, queueModel.order.begLstGoDt, queueModel.order.endLstBackDt);
                             if (PkgModel.result != "0000")
                             {
                                 Website.Instance.logger.Info($"ComboBookingFlow QueryPackage error response={JsonConvert.SerializeObject(PkgModel)}");
@@ -453,6 +457,17 @@ where booking_dtl_xid=@booking_dtl_xid";
 
                                 };//插入DtlData
                                 var bookingModel = _bookingRepos.SetBookingModel(ProdModuleModel, queueModel.order);//取得訂購的模組
+                                #region 補上訂購所有資訊
+                                bookingModel.productOid = prod.prod_oid;
+                                bookingModel.packageOid = prod.pkg_oid;
+                                bookingModel.itemOid = prod.item_oid;
+                                bookingModel.prodVersion = ProdModel.version;
+                                bookingModel.channelOid = Website.Instance.Configuration["WMS_API:CompanyData:ChannelOid"];
+                                bookingModel.ipaddress = GetLocalIPAddress();
+                                bookingModel.currency = FAData.data.First().fa_vouch_currency;
+                                bookingModel.skus = new List<Model.CartBooking.SkuModel>();
+                                bookingModel.checkoutDate= DateTime.Now.AddMonths(1).ToString("yyyy-MM-25 HH:mm:ss");
+                                #endregion
                                 //補上bookingInfo
                                 bookingModel.bookingInfo = new Model.CartBooking.bookingInfoModel
                                 {
@@ -463,22 +478,29 @@ where booking_dtl_xid=@booking_dtl_xid";
                                     pkg_oid = Convert.ToInt64(prod.pkg_oid),
                                     skus = new List<Model.CartBooking.BookingInfoConfirmSku>(),
                                     is_open_date = (ProdModel.go_date_setting.type == "03" || ProdModel.go_date_setting.type == "04") ? true : false,
-                                    pay_type = "arType"
+                                    pay_type = "arType",
+                                    kk_company_no= FAData.data.First().company_no.ToString()
                                 };
                                 if (ProdModel.go_date_setting.type == "03" || ProdModel.go_date_setting.type == "04")
                                 {
                                     bookingModel.lstGoDt = null;
                                     bookingModel.lstBackDt = null;
                                 }
-                                cartBooking.Add(bookingModel);
+                                else
+                                {
+                                    bookingModel.bookingInfo.go_date = bookingModel.lstGoDt;
+                                    bookingModel.bookingInfo.back_date = bookingModel.lstBackDt;    
+                                }
+                                
                                 Model.CartBooking.ConfirmProdInfoModel confirmOrder = new Model.CartBooking.ConfirmProdInfoModel()
                                 {
                                     prod_version = ProdModel.version,
                                     time_zone = ProdModel.timezone,
                                     has_event = (bool?)PkgModel.item.First().has_event,
+                                    event_time=queueModel.order.eventTime,
                                     begin_date = queueModel.order.begLstGoDt,
                                     end_date = queueModel.order.endLstBackDt,
-                                    currency = FAData.data.FirstOrDefault().currency,
+                                    currency = FAData.data.FirstOrDefault().fa_vouch_currency,
                                     ori_guidkey = PkgModel.guid,//價錢的快取
                                     price_token = Guid.NewGuid().ToString(),//存取至給Java驗證的Price
                                     prod_oid = prod.prod_oid,
@@ -486,8 +508,21 @@ where booking_dtl_xid=@booking_dtl_xid";
                                     item_oid = prod.item_oid,
                                     skus = new List<Model.CartBooking.ConfirmSku>(),
                                     locale = queueModel.order.memberLang,
-                                    go_date_type = ProdModel.go_date_setting.type
+                                    go_date_type = ProdModel.go_date_setting.type,
+                                    adjprice_flag=true,
+                                    adjprice_type="01"
                                 };
+                                bookingModel.priceToken = confirmOrder.price_token;//將訂單的token逐筆給予
+                                if (confirmOrder?.has_event == false)
+                                {
+                                    confirmOrder.event_time = "";
+                                    bookingModel.eventTime = "";
+                                }
+                                else//有場次lstBackDt需要為空
+                                {
+                                    bookingModel.lstBackDt = null;
+                                }
+                                
                                 double tempTotalPrice = 0;
                                 int? dtlTotalQty = 0;
                                 foreach (var skusData in prod.skus)//將對應到的sku放進一筆訂單中的skus
@@ -498,6 +533,12 @@ where booking_dtl_xid=@booking_dtl_xid";
                                         qty = skusData.qty,
                                         sku_id = skusData.sku_oid
                                     });
+                                    bookingModel.skus.Add(new Model.CartBooking.SkuModel
+                                    {
+                                        sku_oid=skusData.sku_oid,
+                                        qty=(int)skusData.qty
+                                    });
+
                                     tempTotalPrice += (double)skusData.qty * 1;
                                     dtlTotalQty += skusData.qty;
                                 }
@@ -505,7 +546,8 @@ where booking_dtl_xid=@booking_dtl_xid";
                                 insertDtlData.Add(insertdata);
                                 confirmOrder.total_price = tempTotalPrice;
                                 cartBookingValid.cartorder.Add(confirmOrder);
-
+                                bookingModel.currPriceTotal = tempTotalPrice;
+                                cartBooking.Add(bookingModel);
                             }
                         }
                     }
@@ -514,6 +556,7 @@ where booking_dtl_xid=@booking_dtl_xid";
                 cartBookingValid.adjprice_flag = true;
                 cartBookingValid.adjprice_type = "01";//允許任意金額
                 cartBookingValid.token = Guid.NewGuid().ToString();//母單的金額
+                cartBooking.ForEach(x => x.masterPriceToken = cartBookingValid.token);
                 var bookingConfirm = _bookingRepos.confirmBooking(cartBookingValid);
                 if (bookingConfirm.result != "0000")
                 {
@@ -528,6 +571,7 @@ where booking_dtl_xid=@booking_dtl_xid";
                     }, queueModel.order.orderMid);
                     throw new Exception("ComboBookingFlow CartBooking error.");
                 }
+
                 var cartbookingRs = _bookingRepos.CartBooking(cartBooking);
                 if (cartbookingRs.result != "0000")
                 {

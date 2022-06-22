@@ -29,19 +29,22 @@ namespace KKday.Web.OCBT.Models.Repository
                     contactFirstname=order.contactFirstname,
                     contactLastname=order.contactLastname,
                     contactEmail=order.contactEmail,
-                    telCountryCd=order.contactTelCd,
+                    telCountryCd=order.telCountryCd,
                     contactTel=order.contactTel,
                     contactCountryCd=order.contactCountryCd,
                     lstGoDt=order.begLstGoDt,
                     lstBackDt=order.endLstBackDt,
-                    //guideLang=order.
+                    guideLang=order.memberLang,
                     note="",
                     crtDevice="API",
                     crtBrowser="N",
                     crtBrowserVersion="1",
                     multiPricePlatform="03",
                     sourceCode="B2D",
-                    modules=new modulesData()
+                    eventTime = order.eventTime,
+                    
+                    modules =new modulesData()
+                    
                 };
                 if (module.result == "0000")
                 {
@@ -67,7 +70,7 @@ namespace KKday.Web.OCBT.Models.Repository
                         {
                             rs.modules.contactData = GetContModel(module.module_contact_data, masterInfo.content.orderModuleDataList.Where(m => m.moduleType == "OMDL_CONTACT_DATA").Select(x => x.moduleData).First());
                         }
-                        else { }
+                        
                     }
                     else
                     {
@@ -75,6 +78,11 @@ namespace KKday.Web.OCBT.Models.Repository
                         {
                             moduleType = "OMDL_CONTACT_DATA",
                             moduleData = new moduleData_contactData()
+                            {
+                                contactName=new contactNameInfo(),
+                                contactApp=new contactAppInfo() ,
+                                contactTel=new contactTelInfo()
+                            }
                         };
                     }
                     #endregion
@@ -88,10 +96,17 @@ namespace KKday.Web.OCBT.Models.Repository
                     }
                     else
                     {
-                        rs.modules.contactData = new contactDataM
+                        rs.modules.sendData = new sendDataM
                         {
                             moduleType = "OMDL_SEND_DATA",
-                            moduleData = new moduleData_contactData()
+                            moduleData = new moduleData_sendData()
+                            {
+                                receiverName=new receiverNameInfo(),
+                                receiverTel=new receiverTelInfo(),
+                                shipInfo=new shipInfoInfo(),
+                                sendToCountry=new sendToCountryInfo() { receiveAddress=new receiveAddressInfo() { } },
+                                sendToHotel=new sendToHotelInfo() { buyerLocalName=new buyerLocalNameInfo(),buyerPassportEnglishName=new buyerPassportEnglishNameInfo()}
+                            }
                         };
                     }
                     #endregion
@@ -109,6 +124,16 @@ namespace KKday.Web.OCBT.Models.Repository
                         {
                             moduleType = "OMDL_FLIGHT_INFO",
                             moduleData = new moduleData_FlightInfo()
+                            {
+                                arrival = new arrivalInfo() {
+                                    arrivalDatetime=new arrivalDatetimeInfo(),
+                                },
+                                departure=new departureInfo()
+                                {
+                                    departureDatetime=new departureDatetimeInfo()
+                                }
+
+                            }
                         };
                     }
                     #endregion
@@ -126,6 +151,10 @@ namespace KKday.Web.OCBT.Models.Repository
                         {
                             moduleType = "OMDL_PSGR_DATA",
                             moduleData = new moduleData_passenger()
+                            {
+                                qtyChildSeat=new qtyChildSeatInfo(),
+                                qtyInfantSeat=new qtyInfantSeatInfo()
+                            }
                         };
                     }
                     #endregion
@@ -143,6 +172,9 @@ namespace KKday.Web.OCBT.Models.Repository
                         {
                             moduleType = "OMDL_OTHER_DATA",
                             moduleData = new moduleData_otherData()
+                            {
+                                
+                            }
                         };
                     }
                     #endregion
@@ -151,11 +183,28 @@ namespace KKday.Web.OCBT.Models.Repository
                     {
                         moduleType = "OMDL_RENT_CAR",
                         moduleData = new moduleData_CarRent()
+                        {
+                            dropOff=new dropOffInfo_forCar()
+                            {
+                                datetime=new dateTimeInfo()
+                                
+                            },
+                            pickUp=new pickUpInfo_forCar()
+                            {
+                                datetime=new dateTimeInfo()
+                            }
+                        }
                     };//目前不支援rentCar模組
                     rs.modules.shuttleData = new shuttleDataM
                     {
                         moduleType = "OMDL_SHUTTLE",
                         moduleData = new moduleData_Shuttle()
+                        {
+                            charterRoute=new charterRouteInfo() { },
+                            designatedByCustomer=new designatedByCustomerInfo() { dropOff=new dropOffInfo() { },pickUp=new pickUpInfo() { time=new timeInfo() { } } },
+                            designatedLocation=new designatedLocationInfo() { },
+                            
+                        }
                     };//目前不支援pickup模組
 
                     return rs;
@@ -350,7 +399,7 @@ namespace KKday.Web.OCBT.Models.Repository
         {
             try
             {
-                string url = $"{Website.Instance.Configuration["WMS_API:URL"]}v2/Booking/CartBookingAR";
+                string url = $"{Website.Instance.Configuration["WMS_API:URL"]}v2/Booking/CartBookingAR/1";
                 var result = CommonProxy.Post(url, JsonConvert.SerializeObject(rq));
                 return JsonConvert.DeserializeObject<CartBookingRsModel>(result);
             }
