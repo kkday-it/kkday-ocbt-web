@@ -186,23 +186,35 @@ AND m.order_mid=ANY(:orders)";
             }
             catch(Exception ex)
             {
+                Website.Instance.logger.Fatal($"OrderRepos QueryBookingMst Exception: Message={ex.Message}, StackTrace={ex.StackTrace}");
                 throw ex;
             }
         }
-        public RsModel UpdateDtlVoucherStatus(string orderMid, string status)
+        public RsModel UpdateDtlVoucherStatus(string orderMid, string status, List<string> fileInfo =null)
         {
             try
             {
                 RsModel rs = new RsModel() { result = "0001", result_message = "order_mid & booking_dtl_voucher_status 不可為空" };
                 if(!string.IsNullOrEmpty(orderMid) && !string.IsNullOrEmpty(status))
                 {
+                    var _dynamic = new DynamicParameters();
+                    _dynamic.Add("order_mid", orderMid);
+                    _dynamic.Add("booking_dtl_voucher_status", status);
+
                     string sql = @"UPDATE public.booking_dtl 
-SET booking_dtl_voucher_status=:status, modify_datetime=NOW()
-WHERE order_mid=:orderMid ";
+SET booking_dtl_voucher_status=:status, modify_datetime=NOW() ";
+
+                    if (fileInfo.Count > 0)
+                    {
+                        sql += " , voucher_file_info=:fileInfo";
+                        _dynamic.Add("fileInfo", fileInfo);
+                    }
+
+                    sql += " WHERE order_mid =:orderMid ";
 
                     using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                     {
-                        if (conn.Execute(sql, new { orderMid, status }) > 0)
+                        if (conn.Execute(sql, _dynamic) > 0)
                         {
                             rs.result = "0000";
                             rs.result_message = "OK";
@@ -218,6 +230,7 @@ WHERE order_mid=:orderMid ";
             }
             catch (Exception ex)
             {
+                Website.Instance.logger.Fatal($"OrderRepos UpdateDtlVoucherStatus Exception: Message={ex.Message}, StackTrace={ex.StackTrace}");
                 throw ex;
             }
         }

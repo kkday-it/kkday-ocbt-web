@@ -102,46 +102,5 @@ namespace KKday.Web.OCBT.V1
 
             return rs;
         }
-
-        [HttpGet("TestSetVoucher")]
-        public ResponseJson TestSetVoucher(string order_mid)
-        {
-            ResponseJson rs = new ResponseJson();
-            rs.metadata = new ResponseMetaModel { status = "FAIL" };
-            try
-            {
-                var _order = HttpContext.RequestServices.GetService<OrderRepository>();
-                //1.查詢憑證List
-                var voucherList = _order.QueryVouchers(order_mid);
-                if (voucherList.file.Count > 0)
-                {
-                    voucherList.file.ForEach(x =>
-                    {
-                        // 2. 下載憑證至memory
-                        var file = _order.DownloadVoucher(order_mid, x.order_file_id);
-                        if (file.result == "00" && file.result_msg == "OK")
-                        {
-                            var a = file.file.FirstOrDefault().content_type;
-                            byte[] bytes = Convert.FromBase64String(file.file.First().encode_str);
-                            // 3. 上傳至 s3 (必須為PDF)
-                            var upload = _amazonS3Service.UploadObject(x.file_name, "application/pdf", bytes).Result;
-                            if (upload.Success)
-                            {
-                                rs.metadata.description = $"S3 Key = {upload.FileName}";
-                                rs.metadata.status = upload.ToString();
-                            }
-
-                            var base64str = Convert.ToBase64String(bytes);
-                        }
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                rs.metadata.description = $"Exception : Msg={ex.Message} , StackTrace={ex.StackTrace}";
-            }
-            return rs;
-        }
-
     }
 }
