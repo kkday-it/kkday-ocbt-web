@@ -52,11 +52,12 @@ namespace KKday.Web.OCBT.Service
                 while (true)
                 {
                     // Get From RedisQ
-                    var keyforOrder = "ComboBookingVoucher";
+                    var keyforOrder = "ComboBookingVouchers";
                     var getQueue = _redisHelper.Pop(keyforOrder);
-                    Website.Instance.logger.Info($"Voucher GetQueue: {getQueue}");
+                    //Website.Instance.logger.Info($"Voucher GetQueue: {getQueue}");
                     if (getQueue.HasValue)
                     {
+                        Website.Instance.logger.Info($"Voucher GetQueue: order_mid={JsonConvert.DeserializeObject<QueueModel>(getQueue).master_order_mid}");
                         var queue = new string[] { JsonConvert.DeserializeObject<QueueModel>(getQueue).master_order_mid };
                         // 取出母單
                         var mainOrders = _orderRepos.QueryBookingMst(queue);
