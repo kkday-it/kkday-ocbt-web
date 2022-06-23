@@ -18,6 +18,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
+using OCBT.Infra.DAL.Migrations;
+using Microsoft.EntityFrameworkCore;
 
 namespace KKday.Web.OCBT
 {
@@ -35,6 +37,15 @@ namespace KKday.Web.OCBT
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            //Migration
+            var connStr = Configuration["ConnectionStrings:NpgsqlConnection"];
+            services.AddDbContext<OCBTContext>(x => x.UseNpgsql(connStr, options =>
+            {
+                //options.SetPostgresVersion(new Version(9, 6));
+                options.MigrationsAssembly("KKday.Web.OCBT");
+            }), ServiceLifetime.Transient);
+
+
             #region ASP.NET Core多語系挖字
 
             //JSON多語系挖字

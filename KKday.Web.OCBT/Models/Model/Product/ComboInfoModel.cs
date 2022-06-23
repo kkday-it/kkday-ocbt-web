@@ -42,6 +42,7 @@ namespace KKday.Web.OCBT.Models.Model.Product
     {
         public List<ComboDataModel> data { get; set; }
         public metaDataProdModel meta { get; set; }
+        public int voucher_max_time { get; set; }
     }
     public class metaDataProdModel
     {
