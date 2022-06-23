@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,7 +31,7 @@ namespace KKday.Web.OCBT.Service
         public Task StartAsync(CancellationToken cancellationToken)
         {
             // Get Voucher
-            _timer1 = new Timer(DoWork, null, TimeSpan.Zero, TimeSpan.FromMinutes(10));
+            _timer1 = new Timer(DoWork, null, TimeSpan.Zero, TimeSpan.FromSeconds(30));
             // 每分鐘檢查=>母單已超過時間但is_callback=false
             _timer2 = new Timer(DoWork2, null, TimeSpan.Zero, TimeSpan.FromMinutes(1));
 
@@ -51,13 +52,16 @@ namespace KKday.Web.OCBT.Service
                 while (true)
                 {
                     // Get From RedisQ
-                    var keyforOrder = "ComboBookingVoucher";
+                    var keyforOrder = "ComboBookingVouchers";
                     var getQueue = _redisHelper.Pop(keyforOrder);
+                    //Website.Instance.logger.Info($"Voucher GetQueue: {getQueue}");
                     if (getQueue.HasValue)
                     {
+                        Website.Instance.logger.Info($"Voucher GetQueue: order_mid={JsonConvert.DeserializeObject<QueueModel>(getQueue).master_order_mid}");
                         var queue = new string[] { JsonConvert.DeserializeObject<QueueModel>(getQueue).master_order_mid };
                         // 取出母單
                         var mainOrders = _orderRepos.QueryBookingMst(queue);
+                        Website.Instance.logger.Info($"Voucher Get Order Master: {JsonConvert.SerializeObject(mainOrders)}");
                         foreach (var main in mainOrders.order_mst_list)
                         {
                             // 暫定=>沒填 Default 等待20min
@@ -79,6 +83,7 @@ namespace KKday.Web.OCBT.Service
                                         var voucherList = _orderRepos.QueryVouchers(sub.orderMid);
                                         if (voucherList.file.Count > 0)
                                         {
+                                            List<string> fileInfo = new List<string>();
                                             voucherList.file.ForEach(x =>
                                             {
                                                 // 2. 下載憑證至memory
@@ -89,11 +94,12 @@ namespace KKday.Web.OCBT.Service
                                                     byte[] bytes = Convert.FromBase64String(file.file.First().encode_str);
                                                     // 3. 上傳至 s3 (必須為PDF)
                                                     var upload = _amazonS3Service.UploadObject(x.file_name, "application/pdf", bytes).Result;
+                                                    if (upload.Success) fileInfo.Add(x.file_name);
                                                 }
                                             });
 
                                             // 4. 更改子單voucher_status='VOUCHER_OK'
-                                            var updVoucher = _orderRepos.UpdateDtlVoucherStatus(sub.orderMid, "VOUCHER_OK");
+                                            var updVoucher = _orderRepos.UpdateDtlVoucherStatus(sub.orderMid, "VOUCHER_OK", fileInfo);
                                             if (updVoucher.result == "0000") voucher_count--;
                                         }
                                         else
