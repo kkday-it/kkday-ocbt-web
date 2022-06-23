@@ -65,6 +65,8 @@ namespace KKday.Web.OCBT.Models.Repository
 booking_mst_voucher_status,voucher_deadline,is_callback,is_back,is_need_back,monitor_start_datetime,create_user,create_datetime,modify_user,modify_datetime
 FROM BOOKING_MST mst WHERE 1=1 ";
                 sql += FilterMstData(rq);
+                SqlMapper.AddTypeHandler(typeof(Dictionary<string, object>), new ObjectJsonMapper());
+                SqlMapper.AddTypeHandler(typeof(Dictionary<string,object>), new ObjectJsonMapper());
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
                     conn.Open();
@@ -84,9 +86,9 @@ FROM BOOKING_MST mst WHERE 1=1 ";
             {
                 string sql = @"INSERT INTO public.booking_mst(order_mid,order_oid,prod_oid,go_date,booking_model,booking_mst_order_status,booking_mst_voucher_status,
 is_callback,is_back,create_user,create_datetime)
-VALUES(:order_mid,:order_oid,:prod_oid,:go_date,:booking_model,:booking_mst_order_status,:booking_mst_voucher_status,:is_callback,:is_back,:create_user,now())
+VALUES(:order_mid,:order_oid,:prod_oid,:go_date,:booking_model::jsonb,:booking_mst_order_status,:booking_mst_voucher_status,:is_callback,:is_back,:create_user,now())
 RETURNING booking_mst_xid";
-
+                SqlMapper.AddTypeHandler(typeof(BookingRequestModel), new ObjectJsonMapper());
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
                     return conn.QuerySingle<int>(sql, rq);
@@ -127,6 +129,25 @@ RETURNING booking_mst_xid";
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
                     return conn.Execute(sql, new { order_mid, order_status, modify_user });
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Website.Instance.logger.Info($"UpdateCallBack order_mid {order_mid} error:{ex.Message},{ex.StackTrace}");
+                throw ex;
+            }
+        }
+        public int UpdateMstComboModel(string order_mid,string modify_user,ComboReturnModel comboData,int voucher_max_time)
+        {
+            try
+            {
+                string sql = @"UPDATE booking_mst SET combo_model=:comboData::jsonb,voucher_deadline=:voucher_max_time,modify_user=:modify_user,modify_datetime=now() where order_mid=:order_mid";
+                SqlMapper.AddTypeHandler(typeof(ComboReturnModel), new ObjectJsonMapper());
+                
+                using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
+                {
+                    return conn.Execute(sql, new { order_mid,modify_user,comboData,voucher_max_time });
                 }
 
             }
@@ -338,8 +359,7 @@ where booking_dtl_xid=@booking_dtl_xid";
                         order_oid = queueModel.order.orderOid,
                         prod_oid = (int)queueModel.order.prodOid,
                         go_date = Convert.ToDateTime(queueModel.order?.begLstGoDt).ToString("yyyyMMdd"),
-                        //booking_model
-                        //combo_model
+                        booking_model=JsonConvert.DeserializeObject<Dictionary<string,object>>(JsonConvert.SerializeObject(queueModel)),
                         booking_mst_order_status = "NW",
                         booking_mst_voucher_status = "NW",
                         create_user = "SYSTEM",
@@ -376,7 +396,7 @@ where booking_dtl_xid=@booking_dtl_xid";
                 };
                 CartItemModelrs.cart_items.Add(cartItem);
                 var ComboData = GetComboProd(CartItemModelrs);//取得ComboData的資料
-
+                UpdateMstComboModel(queueModel.order?.orderMid, "SYSTEM", ComboData, ComboData.voucher_max_time);//將comboBooking等資訊押入至資料庫
                 #endregion
                 if (ComboData.meta.status != "100000")//取得combo產品失敗
                 {
@@ -722,7 +742,8 @@ where booking_dtl_xid=@booking_dtl_xid";
                     {
                         status = "100000"
                     },
-                    data = new List<ComboDataModel>()
+                    data = new List<ComboDataModel>(),
+                    voucher_max_time=10
                 };
                 response.data.Add(new ComboDataModel
                 {
