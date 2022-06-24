@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.810.22
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KKday.Web.OCBT", "KKday.Web.OCBT\KKday.Web.OCBT.csproj", "{5B4281A3-947D-405F-AFD3-B1D57C7FF7CE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OCBT.Infra", "OCBT.Infra\OCBT.Infra.csproj", "{1EB2087A-CA51-4BE3-A258-BB02B13BC337}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OCBT.Infra", "OCBT.Infra\OCBT.Infra.csproj", "{F54A2AD7-9DFD-482E-94EA-A502E665E71E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{5B4281A3-947D-405F-AFD3-B1D57C7FF7CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5B4281A3-947D-405F-AFD3-B1D57C7FF7CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5B4281A3-947D-405F-AFD3-B1D57C7FF7CE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1EB2087A-CA51-4BE3-A258-BB02B13BC337}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1EB2087A-CA51-4BE3-A258-BB02B13BC337}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1EB2087A-CA51-4BE3-A258-BB02B13BC337}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1EB2087A-CA51-4BE3-A258-BB02B13BC337}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F54A2AD7-9DFD-482E-94EA-A502E665E71E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F54A2AD7-9DFD-482E-94EA-A502E665E71E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F54A2AD7-9DFD-482E-94EA-A502E665E71E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F54A2AD7-9DFD-482E-94EA-A502E665E71E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
