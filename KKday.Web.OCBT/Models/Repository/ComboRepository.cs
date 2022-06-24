@@ -124,7 +124,7 @@ RETURNING booking_mst_xid";
         {
             try
             {
-                string sql = @"UPDATE booking_mst SET booking_mst_order_status=:order_status,modify_user=:modify_user,modify_datetime=now() where order_mid=:order_mid";
+                string sql = @"UPDATE booking_mst SET booking_mst_order_status=:order_status,modify_user=:modify_user,modify_datetime=now(),monitor_start_datetime=now() where order_mid=:order_mid";
 
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
