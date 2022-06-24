@@ -18,7 +18,8 @@
     "URL": "{{ KK_SERVICE.B2D_API.PRIVATE_PROTOCOL}}://{{ KK_SERVICE.B2D_API.DOMAIN}}/intranet/", 
     "CompanyData": {
       "AccountXid": "## COMP_ACCOUNT_XID ##",
-      "CompanyXid": "## COMP_COMPANY_XID ##" 
+      "CompanyXid": "## COMP_COMPANY_XID ##",
+      "ChannelOid":"## COMP_CHANNEL_OID ##"
     }
   },
   "KKdayAPI": {
