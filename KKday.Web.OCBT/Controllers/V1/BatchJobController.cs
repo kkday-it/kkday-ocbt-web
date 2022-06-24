@@ -6,6 +6,7 @@ using System.Threading;
 using Microsoft.AspNetCore.Mvc;
 using KKday.Web.OCBT.AppCode;
 using KKday.Web.OCBT.Models.Repository;
+using KKday.Web.OCBT.Models.Model.DataModel;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -16,10 +17,14 @@ namespace KKday.Web.OCBT.V1
     {
         private IRedisHelper _redisHelper;
         private readonly BatchJobRepository _batchJobRepos;
-        public BatchJobController(IRedisHelper redisHelper, BatchJobRepository batchJobRepos)
+        private readonly OrderRepository _orderRepos;
+        private readonly SlackHelper _slack;
+        public BatchJobController(IRedisHelper redisHelper, BatchJobRepository batchJobRepos, OrderRepository orderRepos, SlackHelper slack)
         {
             _redisHelper = redisHelper;
             _batchJobRepos = batchJobRepos;
+            _orderRepos = orderRepos;
+            _slack = slack;
         }
 
         [HttpGet("SetParentOrderStatusBack")]
@@ -55,6 +60,55 @@ namespace KKday.Web.OCBT.V1
             {
                 Website.Instance.logger.Fatal($"ComboBooking_DoChkParentOrder_exception:GuidKey={guidKey}, Message={ex.Message}, StackTrace={ex.StackTrace}");
 
+            }
+        }
+
+        /// <summary>
+        /// 檢查母單已超過時間但is_callback=false
+        /// </summary>
+        private async void CheckCallBack()
+        {
+            string guidKey = Guid.NewGuid().ToString();
+
+            try
+            {
+                // 取得尚未 CallBack 的母單(is_callback=false)
+                var master = _orderRepos.GetTimeOutMaster();
+                if (master.result == "0000" && master.count > 0)
+                {
+                    master.order_mst_list.ForEach(x =>
+                    {
+                        if (!string.IsNullOrEmpty(x.monitor_start_datetime))
+                        {
+                            var sDateTime = Convert.ToDateTime(x.monitor_start_datetime);
+                            // 暫定=>沒填 Default 等待20min
+                            var deadLine = x.voucher_deadline == 0 ? 20 : x.voucher_deadline;
+                            if (DateTime.Now > sDateTime.AddMinutes(deadLine))
+                            {
+                                // 1. Update DB
+                                var upd = _orderRepos.UpdateIsCallBack(x.booking_mst_xid, true);
+                                if (upd.result == "0000")
+                                {
+                                    // 2. 觸發 CallBackJava
+                                    RequestJson callBackJson = new RequestJson
+                                    {
+                                        orderMid = x.order_mid,
+                                        metadata = new RequesteMetaModel
+                                        {
+                                            status = "2010",
+                                            description = "檢查已超時但尚未CallBack的母單成功"
+                                        }
+                                    };
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Website.Instance.logger.Fatal($"CheckCallBack_Exception: Message={ex.Message}, StackTrace={ex.StackTrace}");
+                _slack.SlackPost(guidKey, "CheckCallBack", "BatchJobController/CheckCallBack", $"檢查已超時但尚未CallBack的母單異常！", $"Msg={ex.Message}, StackTrace={ex.StackTrace}");
             }
         }
     }
