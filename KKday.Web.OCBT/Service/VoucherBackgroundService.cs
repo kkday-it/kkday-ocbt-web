@@ -18,7 +18,6 @@ namespace KKday.Web.OCBT.Service
         private IRedisHelper _redisHelper;
         private readonly AmazonS3Service _amazonS3Service;
         private Timer _timer1;
-        private Timer _timer2;
 
         public VoucherBackgroundService(OrderRepository orderRepos, ComboBookingRepository comboBookRepos, IRedisHelper redisHelper, AmazonS3Service amazonS3Service)
         {
@@ -30,10 +29,11 @@ namespace KKday.Web.OCBT.Service
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            // Get Voucher
-            _timer1 = new Timer(DoWork, null, TimeSpan.Zero, TimeSpan.FromSeconds(30));
-            // 每分鐘檢查=>母單已超過時間但is_callback=false
-            _timer2 = new Timer(DoWork2, null, TimeSpan.Zero, TimeSpan.FromMinutes(1));
+            if (Website.Instance.Configuration["Switch"] == "ON")
+            {
+                // Get Voucher
+                _timer1 = new Timer(DoWork, null, TimeSpan.Zero, TimeSpan.FromSeconds(30));
+            }
 
             return Task.CompletedTask;
         }
@@ -66,7 +66,7 @@ namespace KKday.Web.OCBT.Service
                         {
                             // 暫定=>沒填 Default 等待20min
                             var deadLine = main.voucher_deadline == 0 ? 20 : main.voucher_deadline;
-                            var voucherDeadline = Convert.ToDateTime(main.monitor_start_datetime).AddMinutes(main.voucher_deadline);
+                            var voucherDeadline = Convert.ToDateTime(main.monitor_start_datetime).AddMinutes(deadLine);
                             // 取出應處理的子單
                             var subOrders = _orderRepos.FetchOrderDtlData(main.booking_mst_xid.ToString(), voucherStatus: "PROCESS").order_dtl_list?.Select(x => x.order_mid).ToArray();
                             if (subOrders != null)
@@ -154,49 +154,10 @@ namespace KKday.Web.OCBT.Service
                 Website.Instance.logger.Fatal($"VoucherBackgroundService_Exception: Message={ex.Message}, StackTrace={ex.StackTrace}");
             }
         }
-        /// <summary>
-        /// 檢查母單已超過時間但is_callback=false
-        /// </summary>
-        /// <param name="state"></param>
-        private void DoWork2(object state)
-        {
-            // 取得尚未 CallBack 的母單(is_callback=false)
-            var master = _orderRepos.GetTimeOutMaster();
-            if (master.result == "0000" && master.count > 0)
-            {
-                master.order_mst_list.ForEach(x =>
-                {
-                    if (!string.IsNullOrEmpty(x.monitor_start_datetime))
-                    {
-                        var sDateTime = Convert.ToDateTime(x.monitor_start_datetime);
-                        // 暫定=>沒填 Default 等待20min
-                        var deadLine = x.voucher_deadline == 0 ? 20 : x.voucher_deadline;
-                        if (DateTime.Now > sDateTime.AddMinutes(deadLine))
-                        {
-                            // 1. Update DB
-                            var upd = _orderRepos.UpdateIsCallBack(x.booking_mst_xid, true);
-                            if (upd.result == "0000")
-                            {
-                                // 2. 觸發 CallBackJava
-                                RequestJson callBackJson = new RequestJson
-                                {
-                                    orderMid = x.order_mid
-                                };
-                            }
-                        }
-                    }
-                });
-            }
-            else if (master.result == "9999")
-            {
-                // Exception 處理？
-            }
-        }
 
         public void Dispose()
         {
             _timer1?.Dispose();
-            _timer2?.Dispose();
         }
 
         public class QueueModel
