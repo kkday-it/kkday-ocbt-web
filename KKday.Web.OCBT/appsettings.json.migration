@@ -1,0 +1,5 @@
+{
+  "ConnectionStrings": {
+    "NpgsqlConnection": "Host={{ DATABASE_ENV.OCBT_WEB.HOST }};Username={{ DATABASE_ENV.OCBT_WEB.USER.MIGRATION.NAME }};Password={{ DATABASE_ENV.OCBT_WEB.USER.MIGRATION.PASSWORD }};Database={{ DATABASE_ENV.OCBT_WEB.DB_NAME }};Port={{ DATABASE_ENV.OCBT_WEB.PORT }};"
+  }
+}
