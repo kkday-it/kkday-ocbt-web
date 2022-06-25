@@ -124,7 +124,7 @@ RETURNING booking_mst_xid";
         {
             try
             {
-                string sql = @"UPDATE booking_mst SET booking_mst_order_status=:order_status,modify_user=:modify_user,modify_datetime=now() where order_mid=:order_mid";
+                string sql = @"UPDATE booking_mst SET booking_mst_order_status=:order_status,modify_user=:modify_user,modify_datetime=now(),monitor_start_datetime=now() where order_mid=:order_mid";
 
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
@@ -230,7 +230,7 @@ VALUES(@booking_mst_xid,@prod_oid,@package_oid,@item_oid,@sku_oid::jsonb,@real_b
             try
             {
                 string sql = @"UPDATE BOOKING_DTL dtl SET booking_dtl_order_status=@booking_dtl_order_status,
-order_master_oid=@order_master_oid,order_master_mid=@order_master_mid,order_mid=@order_mid,order_oid=@order_oid,modify_datetime=now()
+order_master_oid=@order_master_oid,order_master_mid=@order_master_mid,order_mid=@order_mid,order_oid=@order_oid,modify_datetime=now(),modify_user='SYSTEM'
 where booking_dtl_xid=@booking_dtl_xid";
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
@@ -473,7 +473,8 @@ where booking_dtl_xid=@booking_dtl_xid";
                                     booking_dtl_order_status = "NW",
                                     booking_dtl_voucher_status = "NW",
                                     order_master_mid = "",
-                                    order_master_oid = 0
+                                    order_master_oid = 0,
+                                    create_user= "SYSTEM"
 
                                 };//插入DtlData
                                 var bookingModel = _bookingRepos.SetBookingModel(ProdModuleModel, queueModel.order);//取得訂購的模組
