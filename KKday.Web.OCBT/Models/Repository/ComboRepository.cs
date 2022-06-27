@@ -14,6 +14,7 @@ using KKday.Web.OCBT.Proxy;
 using System.Collections.Generic;
 using KKday.Web.OCBT.Models.Model.Product;
 using Microsoft.Extensions.DependencyInjection;
+using KKday.Web.OCBT.Models.Model.Order;
 
 namespace KKday.Web.OCBT.Models.Repository
 {
@@ -808,7 +809,32 @@ where booking_dtl_xid=@booking_dtl_xid";
 
         }
 
+        /// <summary>
+        /// 檢查是否為OCBT子單，同時update 為處理中
+        /// </summary>
+        /// <param name="order_mid"></param>
+        public void CheckOrderFromB2d(string order_mid)
+        {
+            try
+            {
+                string sqlCount = @"SELECT COUNT(0) FROM booking_dtl WHERE order_mid=:order_mid ";
 
+                using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
+                {
+                    if (conn.QuerySingle<int>(sqlCount, new { order_mid }) > 0)
+                    {
+                        var sqlParam = @"UPDATE public.booking_dtl 
+SET booking_dtl_voucher_status='PROCESS' WHERE order_mid=:order_mid";
+                        // Start Update DTL Voucher status
+                        conn.Execute(sqlParam, new { order_mid });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Website.Instance.logger.Info($"ComboRepos CheckOrderFromB2d error. message:{ex.Message}, stackTrace:{ex.StackTrace}");
+            }
+        }
 
         public string GetLocalIPAddress()
         {

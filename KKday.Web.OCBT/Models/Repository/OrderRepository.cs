@@ -164,25 +164,25 @@ LEFT JOIN booking_dtl d ON m.booking_mst_xid =d.booking_mst_xid WHERE 1=1 {FILTE
                 throw ex;
             }
         }
+
+        #region Voucher BackgroundService
+
         /// <summary>
         /// Query BookingMst by Batch order_mid
         /// </summary>
         /// <param name="req">string array order_mid</param>
         /// <returns></returns>
-        public OrderRsModel QueryBookingMst(string [] orders)
+        public OrderMstModel QueryBookingMst(string order_mid)
         {
             try
             {
-                OrderRsModel rs = new OrderRsModel();
-                string sql = @"SELECT m.* FROM booking_mst m WHERE m.booking_mst_order_status='GL' 
-AND m.order_mid=ANY(:orders)";
+                string sql = @"SELECT m.booking_mst_xid, m.order_mid, m.voucher_deadline, m.monitor_start_datetime
+FROM booking_mst m WHERE m.booking_mst_order_status='GL' AND m.order_mid=:order_mid AND m.is_callback=false ";
 
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
-                    rs.order_mst_list = conn.Query<OrderMstModel>(sql, new { orders }).ToList();
+                    return conn.QuerySingleOrDefault<OrderMstModel>(sql, new { order_mid });
                 }
-
-                return rs;
             }
             catch(Exception ex)
             {
@@ -190,28 +190,53 @@ AND m.order_mid=ANY(:orders)";
                 throw ex;
             }
         }
-        public RsModel UpdateDtlVoucherStatus(string orderMid, string status, List<string> fileInfo =null)
+        public OrderRsModel QueryBookingDtl(int booking_mst_xid)//, string voucherStatus)
+        {
+            try
+            {
+                OrderRsModel rs = new OrderRsModel();
+                string sql = @"SELECT order_mid, booking_dtl_voucher_status
+FROM booking_dtl WHERE booking_mst_xid=:booking_mst_xid";
+
+                using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
+                {
+                    rs.order_dtl_list = conn.Query<OrderDtlModel>(sql, new { booking_mst_xid }).ToList();//, voucherStatus }).ToList();
+                    rs.count = rs.order_dtl_list.Count();
+                    rs.result = "0000";
+                }
+                return rs;
+            }
+            catch(Exception ex)
+            {
+                Website.Instance.logger.Fatal($"OrderRepos QueryBookingDtl Exception: Message={ex.Message}, StackTrace={ex.StackTrace}");
+                throw ex;
+            }
+        }
+        public RsModel UpdateDtlVoucherStatus(string order_mid, string booking_dtl_voucher_status, List<string> voucher_file_info = null)
         {
             try
             {
                 RsModel rs = new RsModel() { result = "0001", result_message = "order_mid & booking_dtl_voucher_status 不可為空" };
-                if(!string.IsNullOrEmpty(orderMid) && !string.IsNullOrEmpty(status))
+                if(!string.IsNullOrEmpty(order_mid) && !string.IsNullOrEmpty(booking_dtl_voucher_status))
                 {
                     var _dynamic = new DynamicParameters();
-                    _dynamic.Add("order_mid", orderMid);
-                    _dynamic.Add("booking_dtl_voucher_status", status);
 
                     string sql = @"UPDATE public.booking_dtl 
-SET booking_dtl_voucher_status=:status, modify_datetime=NOW() ";
+SET booking_dtl_voucher_status=:booking_dtl_voucher_status, modify_datetime=NOW()
+";
 
-                    if (fileInfo.Count > 0)
+                    if (voucher_file_info?.Count > 0)
                     {
-                        sql += " , voucher_file_info=:fileInfo";
-                        _dynamic.Add("fileInfo", fileInfo);
+                        sql += " , voucher_file_info=:voucher_file_info::jsonb \n";
+                        _dynamic.Add("voucher_file_info", voucher_file_info);
                     }
 
-                    sql += " WHERE order_mid =:orderMid ";
+                    sql += " WHERE order_mid=:order_mid ";
 
+                    _dynamic.Add("order_mid", order_mid);
+                    _dynamic.Add("booking_dtl_voucher_status", booking_dtl_voucher_status);
+
+                    SqlMapper.AddTypeHandler(typeof(List<string>), new ObjectJsonMapper());
                     using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                     {
                         if (conn.Execute(sql, _dynamic) > 0)
@@ -234,7 +259,7 @@ SET booking_dtl_voucher_status=:status, modify_datetime=NOW() ";
                 throw ex;
             }
         }
-        public RsModel UpdateMstVoucherStatus(int mst_xid, string status)
+        public RsModel UpdateMstVoucherStatus(int mst_xid, string status, string is_callback = null)//, bool callBack=null)
         {
             try
             {
@@ -242,8 +267,11 @@ SET booking_dtl_voucher_status=:status, modify_datetime=NOW() ";
                 if (mst_xid > 0 && !string.IsNullOrEmpty(status))
                 {
                     string sql = @"UPDATE public.booking_mst 
-SET booking_mst_voucher_status=:status, modify_datetime=NOW()
-WHERE booking_mst_xid=:mst_xid ";
+SET booking_mst_voucher_status=:status, modify_datetime=NOW()";
+
+                    if (!string.IsNullOrEmpty(is_callback)) sql += " , is_callback=true ";
+
+                    sql += "WHERE booking_mst_xid=:mst_xid ";
 
                     using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                     {
@@ -266,6 +294,50 @@ WHERE booking_mst_xid=:mst_xid ";
                 throw ex;
             }
         }
+        public (bool is_true, OrderRsModel rs) CheckDtl(int booking_mst_xid, string order_mid)
+        {
+            var is_true = false;
+            OrderRsModel rs = new OrderRsModel();
+            rs.order_dtl_list = new List<OrderDtlModel>();
+            try
+            {
+                var dtl = QueryBookingDtl(booking_mst_xid);
+                if (dtl.order_dtl_list.Count > 0)
+                {
+                    rs.order_dtl_list = dtl.order_dtl_list;
+                    // PROCESS + VOUCHER_OK = Total 子單
+                    var totalCount = rs.order_dtl_list.Count;
+                    // Select PROCESS Order
+                    var processOrder = rs.order_dtl_list.Where(s => s.booking_dtl_voucher_status == "PROCESS")?.Select(x => x.order_mid).ToArray();
+                    // 應處理的子單筆數
+                    var processCount = processOrder.Count();
+                    // Select VOUCHER_OK Order
+                    var vouhOkCount = rs.order_dtl_list.Where(s => s.booking_dtl_voucher_status == "VOUCHER_OK").Count();
+                    if (processCount == 0&& totalCount == (processCount + vouhOkCount))
+                    {
+                        is_true = true;
+                        // CallBackJava
+                        RequestJson callBackJson = new RequestJson
+                        {
+                            orderMid = order_mid,
+                            metadata = new RequesteMetaModel
+                            {
+                                status = "2000",
+                                description = "OCBT取得憑證OK"
+                            }
+                        };
+                        _comboBookingRepos.CallBackJava(callBackJson);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            return (is_true, rs);
+        }
+
+        #endregion Voucher BackgroundService
 
         #region Call WMS
         public OrderListModel QueryOrders(string[] orders)
@@ -340,7 +412,7 @@ WHERE booking_mst_xid=:mst_xid ";
 
             try
             {
-                string sqlStmt = @"SELECT * FROM booking_mst WHERE is_callback =false ";
+                string sqlStmt = @"SELECT * FROM booking_mst WHERE is_callback=false ";
 
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
@@ -391,9 +463,6 @@ WHERE booking_mst_xid=:mst_xid ";
             return rs;
         }
         #endregion 排程檢查母單是否超過時間且is_callback=false
-
-
-
 
         public void NotifyParentMemo(OrderMemoRequstModel request)
         {
