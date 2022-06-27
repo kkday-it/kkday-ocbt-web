@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using KKday.Web.OCBT.Models.Repository;
 using KKday.Web.OCBT.Service;
+using KKday.Web.OCBT.Models.Model.Order;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -18,12 +19,12 @@ namespace KKday.Web.OCBT.V1
     public class ComboBookingController : Controller
     {
         private IRedisHelper _redisHelper;
-        private readonly ComboSupplierRepository _comboSupRepos;
+        private readonly ComboBookingRepository _comboRepos;
         private readonly AmazonS3Service _amazonS3Service;
-        public ComboBookingController(IRedisHelper redisHelper, ComboSupplierRepository comboSupRepos, AmazonS3Service amazonS3Service)
+        public ComboBookingController(IRedisHelper redisHelper, ComboBookingRepository comboRepos, AmazonS3Service amazonS3Service)
         {
             _redisHelper = redisHelper;
-            _comboSupRepos = comboSupRepos;
+            _comboRepos = comboRepos;
             _amazonS3Service = amazonS3Service;
         }
         // GET: api/values
@@ -101,6 +102,30 @@ namespace KKday.Web.OCBT.V1
             }
 
             return rs;
+        }
+
+        /// <summary>
+        /// 檢查來自B2D的單是否為
+        /// </summary>
+        /// <param name="rq"></param>
+        [HttpPost("CheckOrderFromB2D")]
+        public void CheckOrderFromB2D([FromBody] CheckOrderFromB2dRqModel rq)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(rq?.result_type))
+                {
+                    if (rq?.result_type == "order" && !string.IsNullOrEmpty(rq.order?.order_no))
+                    {
+                        // 檢查是否為OCBT子單，同時update 為處理中
+                        _comboRepos.CheckOrderFromB2d(rq.order.order_no);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Website.Instance.logger.Fatal($"ComboBooking_CheckOrderFromB2D_Exception: Message={ex.Message}, StackTrace={ex.StackTrace}");
+            }
         }
     }
 }
