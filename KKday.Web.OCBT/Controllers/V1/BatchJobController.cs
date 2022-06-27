@@ -19,12 +19,15 @@ namespace KKday.Web.OCBT.V1
         private readonly BatchJobRepository _batchJobRepos;
         private readonly OrderRepository _orderRepos;
         private readonly SlackHelper _slack;
-        public BatchJobController(IRedisHelper redisHelper, BatchJobRepository batchJobRepos, OrderRepository orderRepos, SlackHelper slack)
+        private readonly ComboBookingRepository _comboBookRepos;
+        public BatchJobController(IRedisHelper redisHelper, BatchJobRepository batchJobRepos, OrderRepository orderRepos, SlackHelper slack
+            , ComboBookingRepository comboBookRepos)
         {
             _redisHelper = redisHelper;
             _batchJobRepos = batchJobRepos;
             _orderRepos = orderRepos;
             _slack = slack;
+            _comboBookRepos = comboBookRepos;
         }
 
         [HttpGet("SetParentOrderStatusBack")]
@@ -76,31 +79,23 @@ namespace KKday.Web.OCBT.V1
                 var master = _orderRepos.GetTimeOutMaster();
                 if (master.result == "0000" && master.count > 0)
                 {
-                    master.order_mst_list.ForEach(x =>
+                    master.order_mst_list?.ForEach(x =>
                     {
-                        if (!string.IsNullOrEmpty(x.monitor_start_datetime))
+                        // 1. Update DB
+                        var upd = _orderRepos.UpdateIsCallBack(x.booking_mst_xid, true);
+                        if (upd.result == "0000")
                         {
-                            var sDateTime = Convert.ToDateTime(x.monitor_start_datetime);
-                            // 暫定=>沒填 Default 等待20min
-                            var deadLine = x.voucher_deadline == 0 ? 20 : x.voucher_deadline;
-                            if (DateTime.Now > sDateTime.AddMinutes(deadLine))
+                            // 2. 觸發 CallBackJava
+                            RequestJson callBackJson = new RequestJson
                             {
-                                // 1. Update DB
-                                var upd = _orderRepos.UpdateIsCallBack(x.booking_mst_xid, true);
-                                if (upd.result == "0000")
+                                orderMid = x.order_mid,
+                                metadata = new RequesteMetaModel
                                 {
-                                    // 2. 觸發 CallBackJava
-                                    RequestJson callBackJson = new RequestJson
-                                    {
-                                        orderMid = x.order_mid,
-                                        metadata = new RequesteMetaModel
-                                        {
-                                            status = "2010",
-                                            description = "檢查已超時但尚未CallBack的母單成功"
-                                        }
-                                    };
+                                    status = "2010",
+                                    description = "執行成功 => 檢查已超時但尚未CallBack的母單"
                                 }
-                            }
+                            };
+                            _comboBookRepos.CallBackJava(callBackJson);
                         }
                     });
                 }
