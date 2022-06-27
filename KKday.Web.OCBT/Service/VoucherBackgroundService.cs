@@ -47,13 +47,22 @@ namespace KKday.Web.OCBT.Service
         }
         public async void FetchQueue(Object state)
         {
-            // Get From RedisQ
-            var keyforOrder = "ComboBookingVouchersXX";
-            var getQueue = _redisHelper.Pop(keyforOrder);
-            Website.Instance.logger.Info($"Voucher Background Service Start!!");
-            if (getQueue.HasValue)
+            try
             {
-                await Task.Run(() => DoWork(JsonConvert.DeserializeObject<QueueModel>(getQueue).master_order_mid));
+                // Get From RedisQ
+                var keyforOrder = "ComboBookingVoucher";
+                var getQueue = _redisHelper.Pop(keyforOrder);
+                Website.Instance.logger.Info($"Voucher Background Service Start!!");
+
+                if (getQueue.HasValue)
+                {
+                    var orderMid = JsonConvert.DeserializeObject<QueueModel>(getQueue)?.master_order_mid;
+                    if (!string.IsNullOrEmpty(orderMid)) await Task.Run(() => DoWork(orderMid));
+                }
+            }
+            catch(Exception ex)
+            {
+                Website.Instance.logger.Info($"FetchQueue Exception: Msg={ex.Message}, StackTrace={ex.StackTrace}");
             }
         }
         /// <summary>
@@ -98,16 +107,11 @@ namespace KKday.Web.OCBT.Service
                         }
                         else
                         {
-                            // 檢查是否所有憑證到齊，到齊CallBack Java
-                            var chkSubOrder = _orderRepos.CheckDtl(main.booking_mst_xid, main.order_mid);
-                            if (chkSubOrder.is_true)
+                            // 取得所有待處理子單(PROCESS)
+                            var subOrder = _orderRepos.QueryBookingDtl(main.booking_mst_xid, "PROCESS");
+                            if (subOrder.result == "0000" && subOrder.count > 0)
                             {
-                                // Is True 代表所有憑證到齊且CallBack Java => End;
-                                break;
-                            }
-                            else
-                            {
-                                var processOrder = chkSubOrder.rs.order_dtl_list.Where(s => s.booking_dtl_voucher_status == "PROCESS")?.Select(x => x.order_mid).ToArray();
+                                var processOrder = subOrder.order_dtl_list.Where(s => s.booking_dtl_voucher_status == "PROCESS")?.Select(x => x.order_mid).ToArray();
                                 // Call WMS: 取訂單明細
                                 var _subOrders = _orderRepos.QueryOrders(processOrder);
                                 foreach (var sub in _subOrders?.order)
@@ -142,17 +146,18 @@ namespace KKday.Web.OCBT.Service
                                         }
                                     }
                                 }
-                                // 重新檢查是否所有憑證到齊，到齊CallBack Java
-                                var reChkSubOrder = _orderRepos.CheckDtl(main.booking_mst_xid, main.order_mid);
-                                if (reChkSubOrder.is_true)
-                                {
-                                    // Is True 代表所有憑證到齊且CallBack Java => End;
-                                    break;
-                                }
-
-                                // Sleep (1min)
-                                System.Threading.Thread.Sleep(new TimeSpan(0, 1, 0));
                             }
+                            // 重新檢查是否所有子單憑證到齊，到齊CallBack Java
+                            if (_orderRepos.CheckDtl(main.booking_mst_xid, main.order_mid))
+                            {
+                                // 所有子單憑證到齊=>修改母單訂單狀態
+                                _orderRepos.UpdateMstVoucherStatus(main.booking_mst_xid, "VOUCHER_OK", "true");
+                                // Is True 代表所有憑證到齊且CallBack Java => End;
+                                break;
+                            }
+
+                            // Sleep (1min)
+                            System.Threading.Thread.Sleep(new TimeSpan(0, 1, 0));
                         }
                     }
                     else

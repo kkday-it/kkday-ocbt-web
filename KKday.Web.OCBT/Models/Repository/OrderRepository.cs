@@ -190,23 +190,26 @@ FROM booking_mst m WHERE m.booking_mst_order_status='GL' AND m.order_mid=:order_
                 throw ex;
             }
         }
-        public OrderRsModel QueryBookingDtl(int booking_mst_xid)//, string voucherStatus)
+        public OrderRsModel QueryBookingDtl(int booking_mst_xid, string booking_dtl_voucher_status = null)
         {
             try
             {
                 OrderRsModel rs = new OrderRsModel();
-                string sql = @"SELECT order_mid, booking_dtl_voucher_status
-FROM booking_dtl WHERE booking_mst_xid=:booking_mst_xid";
+                string sql = @"SELECT order_mid, booking_dtl_voucher_status, voucher_file_info
+FROM booking_dtl WHERE booking_mst_xid=:booking_mst_xid ";
 
+                if (!string.IsNullOrEmpty(booking_dtl_voucher_status)) sql += "\n AND booking_dtl_voucher_status=:booking_dtl_voucher_status";
+
+                SqlMapper.AddTypeHandler(typeof(List<string>), new ObjectJsonMapper());
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
-                    rs.order_dtl_list = conn.Query<OrderDtlModel>(sql, new { booking_mst_xid }).ToList();//, voucherStatus }).ToList();
+                    rs.order_dtl_list = conn.Query<OrderDtlModel>(sql, new { booking_mst_xid, booking_dtl_voucher_status }).ToList();
                     rs.count = rs.order_dtl_list.Count();
                     rs.result = "0000";
                 }
                 return rs;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Website.Instance.logger.Fatal($"OrderRepos QueryBookingDtl Exception: Message={ex.Message}, StackTrace={ex.StackTrace}");
                 throw ex;
@@ -259,7 +262,7 @@ SET booking_dtl_voucher_status=:booking_dtl_voucher_status, modify_datetime=NOW(
                 throw ex;
             }
         }
-        public RsModel UpdateMstVoucherStatus(int mst_xid, string status, string is_callback = null)//, bool callBack=null)
+        public RsModel UpdateMstVoucherStatus(int mst_xid, string status, string is_callback = null)
         {
             try
             {
@@ -294,26 +297,23 @@ SET booking_mst_voucher_status=:status, modify_datetime=NOW()";
                 throw ex;
             }
         }
-        public (bool is_true, OrderRsModel rs) CheckDtl(int booking_mst_xid, string order_mid)
+        public bool CheckDtl(int booking_mst_xid, string order_mid)
         {
             var is_true = false;
-            OrderRsModel rs = new OrderRsModel();
-            rs.order_dtl_list = new List<OrderDtlModel>();
+
             try
             {
                 var dtl = QueryBookingDtl(booking_mst_xid);
-                if (dtl.order_dtl_list.Count > 0)
+                if (dtl.result == "0000" && dtl.order_dtl_list?.Count > 0)
                 {
-                    rs.order_dtl_list = dtl.order_dtl_list;
                     // PROCESS + VOUCHER_OK = Total 子單
-                    var totalCount = rs.order_dtl_list.Count;
-                    // Select PROCESS Order
-                    var processOrder = rs.order_dtl_list.Where(s => s.booking_dtl_voucher_status == "PROCESS")?.Select(x => x.order_mid).ToArray();
+                    var totalCount = dtl.count;
                     // 應處理的子單筆數
-                    var processCount = processOrder.Count();
-                    // Select VOUCHER_OK Order
-                    var vouhOkCount = rs.order_dtl_list.Where(s => s.booking_dtl_voucher_status == "VOUCHER_OK").Count();
-                    if (processCount == 0&& totalCount == (processCount + vouhOkCount))
+                    var processCount = dtl.order_dtl_list.Where(s => s.booking_dtl_voucher_status == "PROCESS")?.Select(x => x.order_mid).Count() ?? 0;
+                    // 已處理的子單筆數
+                    var vouhOkCount = dtl.order_dtl_list.Where(s => s.booking_dtl_voucher_status == "VOUCHER_OK")?.Count() ?? 0;
+                    // 沒有待處理的子單 ＆＆ 所有子單階已處理完畢 => CallBackJava
+                    if (processCount == 0 && totalCount == vouhOkCount)
                     {
                         is_true = true;
                         // CallBackJava
@@ -324,8 +324,20 @@ SET booking_mst_voucher_status=:status, modify_datetime=NOW()";
                             {
                                 status = "2000",
                                 description = "OCBT取得憑證OK"
-                            }
+                            },
+                            data = new RequestDataModel()
                         };
+                        dtl.order_dtl_list.ForEach(x =>
+                        {
+                            callBackJson.data.orderinfo.Add(new RequestOrderInfoModel
+                            {
+                                kkOrderNo = x.order_mid,
+                                ticket = x.voucher_file_info,
+                                type = "URL",
+                                fileExtention = "PDF",
+                                result = "OK"
+                            });
+                        });
                         _comboBookingRepos.CallBackJava(callBackJson);
                     }
                 }
@@ -334,7 +346,7 @@ SET booking_mst_voucher_status=:status, modify_datetime=NOW()";
             {
                 throw ex;
             }
-            return (is_true, rs);
+            return is_true;
         }
 
         #endregion Voucher BackgroundService
@@ -412,13 +424,14 @@ SET booking_mst_voucher_status=:status, modify_datetime=NOW()";
 
             try
             {
-                string sqlStmt = @"SELECT * FROM booking_mst WHERE is_callback=false ";
+                string sqlStmt = @"SELECT booking_mst_xid FROM booking_mst WHERE is_callback=false 
+AND now() > monitor_start_datetime + ( CASE WHEN voucher_deadline=0 THEN 20 ELSE voucher_deadline END ||' minutes' )::interval";
 
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
                     SqlMapper.AddTypeHandler(typeof(Dictionary<string, string>), new ObjectJsonMapper());
                     rs.order_mst_list = conn.Query<OrderMstModel>(sqlStmt).ToList();
-                    rs.count = rs.order_mst_list.Count();
+                    rs.count = rs.order_mst_list?.Count() ?? 0;
                     rs.result = "0000";
                 }
             }
