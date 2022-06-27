@@ -274,7 +274,7 @@ SET booking_mst_voucher_status=:status, modify_datetime=NOW()";
 
                     if (!string.IsNullOrEmpty(is_callback)) sql += " , is_callback=true ";
 
-                    sql += "WHERE booking_mst_xid=:mst_xid ";
+                    sql += "\n WHERE booking_mst_xid=:mst_xid ";
 
                     using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                     {
