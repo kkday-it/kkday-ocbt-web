@@ -93,7 +93,7 @@ namespace KKday.Web.OCBT.V1
                                 description = string.IsNullOrEmpty(x.monitor_start_datetime) ? "成立子單失敗" : "取憑證時效過期或成立子單失敗"
                             }
                         };
-                        _comboBookRepos.CallBackJava(callBackJson);
+                        _comboBookRepos.CallBackJava(callBackJson, x.order_mid);
                     });
                 }
             }
