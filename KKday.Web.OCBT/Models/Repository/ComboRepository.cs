@@ -281,7 +281,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
 
                     };
                     string url = $"{Website.Instance.Configuration["COMBO_SETTING:JAVA"]}/api/ocbt/ocbtNotifyCb";
-                    string result = CommonProxy.Post(url, JsonConvert.SerializeObject(callbackData));
+                    string result = CommonProxy.Post(url, JsonConvert.SerializeObject(callbackData, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore }));
                     Website.Instance.logger.Info($"CallBackJava result message: {result}");
 
                     var rs = JObject.Parse(result);
