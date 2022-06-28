@@ -131,7 +131,7 @@ namespace KKday.Web.OCBT.Service
                                                 byte[] bytes = Convert.FromBase64String(file.file.First().encode_str);
                                                 // 3. 上傳至 s3
                                                 var upload = _amazonS3Service.UploadObject(x.file_name, "application/pdf", bytes).Result;
-                                                if (upload.Success) fileInfo.Add(x.file_name);
+                                                if (upload.Success) fileInfo.Add(upload.FileName);
                                             }
                                         });
 
