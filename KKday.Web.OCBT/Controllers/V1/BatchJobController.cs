@@ -56,8 +56,6 @@ namespace KKday.Web.OCBT.V1
                 //Thread.Sleep(e);
 
                 _batchJobRepos.SetParentBack(guidKey);
-
-                var dd = "test";
             }
             catch (Exception ex)
             {

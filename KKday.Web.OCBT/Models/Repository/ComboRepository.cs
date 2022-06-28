@@ -1045,7 +1045,7 @@ FROM booking_dtl WHERE booking_mst_xid=:booking_mst_xid ";
                         memberUuid = Website.Instance.Configuration["KKdayAPI:Body:MemberUuid"],
                         deviceId = deviceId,
                         tokenKey = MD5Tool.GetMD5(Website.Instance.Configuration["KKdayAPI:Body:MemberUuid"] + deviceId +
-                                                      Website.Instance.Configuration["KKAPI_INPUT:JSON:TOKEN"])
+                                                      Website.Instance.Configuration["KKdayAPI:Body:Token"])
                     }
                 };
                 string result = CommonProxy.Post(url, JsonConvert.SerializeObject(JavaApi, new JsonSerializerSettings
