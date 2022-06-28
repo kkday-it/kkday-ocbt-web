@@ -32,5 +32,6 @@ namespace KKday.Web.OCBT.Models.Model.Order
     {
         public string orderMid { get; set; }
         public string orderStatus { get; set; }
+        public Boolean parent { get; set; }
     }
 }

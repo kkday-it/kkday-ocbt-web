@@ -126,7 +126,8 @@ RETURNING booking_mst_xid";
         {
             try
             {
-                string sql = @"UPDATE booking_mst SET booking_mst_order_status=:order_status,modify_user=:modify_user,modify_datetime=now(),monitor_start_datetime=now() where order_mid=:order_mid";
+                //string sql = @"UPDATE booking_mst SET booking_mst_order_status=:order_status,modify_user=:modify_user,modify_datetime=now(),monitor_start_datetime=now() where order_mid=:order_mid";
+                string sql = @"UPDATE booking_mst SET booking_mst_order_status=:order_status,booking_mst_voucher_status='PROCESS',modify_user=:modify_user,modify_datetime=now(),monitor_start_datetime=now() where order_mid=:order_mid"; //當未接到webhook時使用 phil/6/28
 
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
@@ -698,6 +699,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     DtlList.order_mid = cartbookingRs.orders[countwithorder].order_mid;
                     DtlList.order_oid = Convert.ToInt32(cartbookingRs.orders[countwithorder].order_oid);
                     DtlList.booking_dtl_order_status = "GL";
+                    DtlList.booking_dtl_voucher_status = "PROCESS";////當未接到webhook時使用 phil/6/28
                     countwithorder++;//下一張訂單
                     UpdateDtlStatus(DtlList);
                 }
