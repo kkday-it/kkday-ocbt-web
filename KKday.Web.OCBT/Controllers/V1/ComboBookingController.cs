@@ -48,7 +48,7 @@ namespace KKday.Web.OCBT.V1
             {
                 master_order_mid=order_mid
             };
-            _redisHelper.Push("ComboBookingVouchers", JsonConvert.SerializeObject(pushData));//將Java資料傳入redisQueue
+            _redisHelper.Push("ComboBookingVoucher", JsonConvert.SerializeObject(pushData));//將Java資料傳入redisQueue
             return "OK";
         }
 
@@ -68,7 +68,7 @@ namespace KKday.Web.OCBT.V1
 
             try
             {
-                if (string.IsNullOrEmpty(rq.fileUrl))
+                if (string.IsNullOrEmpty(rq?.fileUrl))
                 {
                     rs.metadata.description += "fileUrl can not null";
                 }
@@ -76,21 +76,48 @@ namespace KKday.Web.OCBT.V1
                 {
                     // Rq Log
                     Website.Instance.logger.Info($"ComboBooking Start Get S3: FileName = {rq.fileUrl}");
-                    // Get From S3
-                    var getByte = _amazonS3Service.GetObject(rq.fileUrl).Result;
-                    // Rs Log
-                    Website.Instance.logger.Info($"Get S3 Rq = {JsonConvert.SerializeObject(getByte)}");
-                    if (getByte != null)
+                    // 將子單狀態 Update CB 並取出 母+子 單 Xid
+                    var xid = _comboRepos.UpdateBookingDtlCB(rq.fileUrl);
+                    if (!string.IsNullOrEmpty(xid.mst) && !string.IsNullOrEmpty(xid.dtl))
                     {
-                        if (getByte.Success)
+                        // Get From S3
+                        var getByte = _amazonS3Service.GetObject(rq.fileUrl).Result;
+                        // Rs Log
+                        Website.Instance.logger.Info($"Get S3 Rs = {JsonConvert.SerializeObject(getByte)}");
+
+                        if (getByte != null)
                         {
-                            rs.metadata.status = "3001";
-                            rs.metadata.description = "回傳檔案成功";
-                            // Byte[] Convert to Base64
-                            rs.data = new ResponseDataModel
+                            if (getByte.Success)
                             {
-                                base64str = Convert.ToBase64String(getByte.DataBytes)
-                            };
+                                rs.metadata.status = "3001";
+                                rs.metadata.description = "回傳檔案成功";
+                                // Byte[] Convert to Base64
+                                rs.data = new ResponseDataModel
+                                {
+                                    base64str = Convert.ToBase64String(getByte.DataBytes)
+                                };
+                                // Update Dtl.Status GL
+                                var updGL = _comboRepos.UpdateDtlVoucherStatus(Convert.ToInt64(xid.dtl), "GL");
+                                // Check All Dtl GL then Update Mst.Status GL
+                                var dtlList = _comboRepos.QueryBookingDtl(Convert.ToInt64(xid.mst));
+                                if (dtlList?.Count > 0)
+                                {
+                                    var glList = dtlList.Where(s => s.booking_dtl_voucher_status == "GL")?.Count() ?? 0;
+                                    if (dtlList.Count == glList)
+                                    {
+                                        // Update Mst.Status GL 
+                                        var updMstGL = _comboRepos.UpdateMstVoucherStatus(Convert.ToInt64(xid.mst), "GL");
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                // Get S3 Fail
+                                rs.metadata.description = "不存在此檔案";
+                                // Download Fail
+                                _comboRepos.UpdateDtlVoucherStatus(Convert.ToInt64(xid.dtl), "DOWNLOAD_FAIL");
+                                _comboRepos.UpdateMstVoucherStatus(Convert.ToInt64(xid.mst), "DOWNLOAD_FAIL");
+                            }
                         }
                     }
                 }
@@ -105,7 +132,7 @@ namespace KKday.Web.OCBT.V1
         }
 
         /// <summary>
-        /// 檢查來自B2D的單是否為
+        /// 檢查來自 B2D Webhook 通知的單是否為OCBT子單
         /// </summary>
         /// <param name="rq"></param>
         [HttpPost("CheckOrderFromB2D")]
