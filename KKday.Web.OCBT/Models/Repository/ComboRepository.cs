@@ -275,22 +275,24 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     RequestJavaModel callbackData = new RequestJavaModel
                     {
                         apiKey = Website.Instance.Configuration["KKdayAPI:Body:ApiKey"],
-                        userOid = Website.Instance.Configuration["KKdayAPI:Body:UserOid"],
+                        userOid = Website.Instance.Configuration["KKdayAPI:Body:OcbtUserOid"],
                         locale = "zh-tw",
                         ipaddress = GetLocalIPAddress(),
-                        json = jsonData
+                        json = jsonData,
+                        ver= Website.Instance.Configuration["KKdayAPI:Body:Ver"]
 
                     };
+                    
                     string url = $"{Website.Instance.Configuration["COMBO_SETTING:JAVA"]}/api/ocbt/ocbtNotifyCb";
                     string result = CommonProxy.Post(url, JsonConvert.SerializeObject(callbackData, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore }));
-                    Website.Instance.logger.Info($"CallBackJava result message: {result}");
+                    Website.Instance.logger.Info($"CallBackJava result message: {result},request={ new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore }}");
 
                     var rs = JObject.Parse(result);
                     if (rs["content"]["result"]?.ToString() != "0000")
                     {
                         //警示
                         _slack.SlackPost(Guid.NewGuid().ToString("N"), "CallBackJava", "ComboRepository/CallBackJava", $"order_mid:{order_mid},CallBackJava回覆失敗,請協助確認！", $"Result ={ result}");
-
+                        UpdateCallBack(true, order_mid, "SYSTEM");
                         return false;
                     }
                     UpdateCallBack(true, order_mid, "SYSTEM");
@@ -1032,7 +1034,7 @@ FROM booking_dtl WHERE booking_mst_xid=:booking_mst_xid ";
                 RequestJavaModel JavaApi = new RequestJavaModel()
                 {
                     apiKey = Website.Instance.Configuration["KKdayAPI:Body:ApiKey"],
-                    userOid = Website.Instance.Configuration["KKdayAPI:Body:UserOid"],
+                    userOid = Website.Instance.Configuration["KKdayAPI:Body:B2dUserOid"],
                     locale = "zh-tw",
                     ver = Website.Instance.Configuration["KKdayAPI:Body:Ver"],
                     ipaddress = GetLocalIPAddress(),

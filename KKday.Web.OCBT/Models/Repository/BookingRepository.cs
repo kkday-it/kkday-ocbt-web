@@ -352,7 +352,7 @@ namespace KKday.Web.OCBT.Models.Repository
                 RequestJavaModel callbackData = new RequestJavaModel
                 {
                     apiKey = Website.Instance.Configuration["KKdayAPI:Body:ApiKey"],
-                    userOid = Website.Instance.Configuration["KKdayAPI:Body:UserOid"],
+                    userOid = Website.Instance.Configuration["KKdayAPI:Body:B2dUserOid"],
                     locale = "zh-tw",
                     ver = Website.Instance.Configuration["KKdayAPI:Body:Ver"],
                     ipaddress = "127.0.0.1",
