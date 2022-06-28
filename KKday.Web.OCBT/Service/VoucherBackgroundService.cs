@@ -92,24 +92,7 @@ namespace KKday.Web.OCBT.Service
                     // 判斷是否過時
                     if (DateTime.Now > voucherDeadline)
                     {
-                        // Update booking_mst_voucher_status=VOUCHER_FAIL & is_callback=false (Initial)
-                        _orderRepos.UpdateMstVoucherStatus(main.booking_mst_xid, "VOUCHER_FAIL", "false");
-
-                        // CallBackJava
-                        _comboBookRepos.CallBackJava(new RequestJson
-                        {
-                            orderMid = main.order_mid,
-                            metadata = new RequesteMetaModel
-                            {
-                                status = "2011",
-                                description = "超過等待時間"
-                            }
-                        });
-
-                        // Update booking_mst_voucher_status=VOUCHER_FAIL & is_callback=true (Final)
-                        _orderRepos.UpdateMstVoucherStatus(main.booking_mst_xid, "VOUCHER_FAIL", "true");
-
-                        // 時間超過後結束回圈
+                        // 時間超過後結束回圈，交由排程接手執行
                         break;
                     }
                     else
