@@ -25,7 +25,8 @@
   "KKdayAPI": {
     "Body": {
       "ApiKey": "kkdayapi",
-      "UserOid": "5",
+      "OcbtUserOid": "30",
+      "B2dUserOid","5",
       "Ver": "1.0.1",
       "IPAddress": "127.0.0.1",
       "MemberUuid": "## MEMBER_UUID ##",
