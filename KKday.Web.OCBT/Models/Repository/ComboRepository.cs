@@ -327,6 +327,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                 #region 判斷母單資訊
                 if (getMstModel != null && getMstModel?.booking_mst_order_status == "GL" && getMstModel?.booking_mst_voucher_status == "GL")//確認不為null與狀態都為GL
                 {
+                    UpdateCallBack(false, queueModel.order.orderMid, "SYSTEM");//先將母單改為callback false
                     RequestJson jsonData = new RequestJson
                     {
                         orderMid = getMstModel?.order_mid,
@@ -341,6 +342,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                 }
                 else if (getMstModel != null)//母訂單模組不為空值，取DTL值
                 {
+                    UpdateCallBack(false, queueModel.order.orderMid, "SYSTEM");//先將母單改為callback false
                     var getDtlModel = GetBookingDtlData(new BookingDtlModel
                     {
                         booking_mst_xid = getMstModel.booking_mst_xid
@@ -637,7 +639,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     throw new Exception("ComboBookingFlow CartBooking error.");
                 }
 
-                var cartbookingRs = _bookingRepos.CartBooking(cartBooking);
+                var cartbookingRs = _bookingRepos.CartBooking(cartBooking, queueModel.order.orderMid);
                 if (cartbookingRs.result != "0000")
                 {
                     UpdateMstStatus("BOOKING_FAIL", queueModel.order.orderMid, "SYSTEM");
@@ -780,8 +782,35 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
         {
             try
             {
-                string url = $"{Website.Instance.Configuration["COMBO_SETTING:Prod"]}/GetComboInfo";
-                var responseMsg = CommonProxy.Post(url, JsonConvert.SerializeObject(rs));
+                string url = $"{Website.Instance.Configuration["COMBO_SETTING:Prod"]}/api/v1/skus/combo-info";
+
+                string result = "";
+                using (var handler = new HttpClientHandler())
+                {
+                    handler.ClientCertificateOptions = ClientCertificateOption.Manual;
+                    handler.ServerCertificateCustomValidationCallback =
+                        (httpRequestMessage, cert, cetChain, policyErrors) =>
+                        {
+                            return true;
+                        };
+
+                    using (var client = new HttpClient(handler))
+                    {
+                        using (HttpContent content = new StringContent(JsonConvert.SerializeObject(rs)))
+                        {
+                            content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                            content.Headers.Add("x-auth-id", Website.Instance.Configuration["COMBO_SETTING:x-auth-id"]);
+                            content.Headers.Add("x-auth-signature", Website.Instance.Configuration["COMBO_SETTING:x-auth-signature"]);
+                            content.Headers.Add("x-request-id", Website.Instance.Configuration["COMBO_SETTING:x-request_id"]);
+                            var response = client.PostAsync(url, content).Result;
+                            result = response.Content.ReadAsStringAsync().Result;
+                        }
+                    }
+                }
+
+
+
+                //var responseMsg = CommonProxy.Post(url, JsonConvert.SerializeObject(rs));
                 //ComboReturnModel response = new ComboReturnModel
                 //{
                 //    meta = new metaDataProdModel
@@ -827,7 +856,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                 //    }
                 //});
                 //return response;
-                return JsonConvert.DeserializeObject<ComboReturnModel>(responseMsg);
+                return JsonConvert.DeserializeObject<ComboReturnModel>(result);
 
             }
             catch (Exception ex)
