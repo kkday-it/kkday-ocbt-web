@@ -466,6 +466,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     Website.Instance.logger.Info($"ComboBookingFlow GetComboProd error. request={JsonConvert.SerializeObject(CartItemModelrs)},return={JsonConvert.SerializeObject(ComboData)}");
                     CallBackJava(new RequestJson
                     {
+                        orderMid = getMstModel?.order_mid,
                         metadata = new RequesteMetaModel
                         {
                             status = "2003",
@@ -480,6 +481,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     Website.Instance.logger.Info($"ComboBookingFlow GetReceiveMaster error. orderOid={queueModel.order.orderOid},return={JsonConvert.SerializeObject(FAData)}");
                     CallBackJava(new RequestJson
                     {
+                        orderMid = getMstModel?.order_mid,
                         metadata = new RequesteMetaModel
                         {
                             status = "2010",
@@ -512,6 +514,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                                 Website.Instance.logger.Info($"ComboBookingFlow QueryPackage error response={JsonConvert.SerializeObject(PkgModel)}");
                                 CallBackJava(new RequestJson
                                 {
+                                    orderMid = getMstModel?.order_mid,
                                     metadata = new RequesteMetaModel
                                     {
                                         status = "2004",
@@ -649,6 +652,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     Website.Instance.logger.Info($"ComboBookingFlow confirmBooking error. request={JsonConvert.SerializeObject(cartBookingValid)},response={JsonConvert.SerializeObject(bookingConfirm)}");
                     CallBackJava(new RequestJson
                     {
+                        orderMid = getMstModel?.order_mid,
                         metadata = new RequesteMetaModel
                         {
                             status = "2002",
@@ -672,6 +676,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     Website.Instance.logger.Info($"ComboBookingFlow CartBooking error.request={JsonConvert.SerializeObject(cartBooking)}, response={JsonConvert.SerializeObject(cartbookingRs)}");
                     CallBackJava(new RequestJson
                     {
+                        orderMid = getMstModel?.order_mid,
                         metadata = new RequesteMetaModel
                         {
                             status = "2002",
@@ -708,6 +713,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                 var queueModel = JsonConvert.DeserializeObject<BookingRequestModel>(queue);
                 CallBackJava(new RequestJson
                 {
+                    orderMid = queueModel?.order?.orderMid,
                     metadata = new RequesteMetaModel
                     {
                         status = "9999",
