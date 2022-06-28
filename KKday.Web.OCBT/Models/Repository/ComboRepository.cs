@@ -275,22 +275,24 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     RequestJavaModel callbackData = new RequestJavaModel
                     {
                         apiKey = Website.Instance.Configuration["KKdayAPI:Body:ApiKey"],
-                        userOid = Website.Instance.Configuration["KKdayAPI:Body:UserOid"],
+                        userOid = Website.Instance.Configuration["KKdayAPI:Body:OcbtUserOid"],
                         locale = "zh-tw",
                         ipaddress = GetLocalIPAddress(),
-                        json = jsonData
+                        json = jsonData,
+                        ver= Website.Instance.Configuration["KKdayAPI:Body:Ver"]
 
                     };
+                    
                     string url = $"{Website.Instance.Configuration["COMBO_SETTING:JAVA"]}/api/ocbt/ocbtNotifyCb";
                     string result = CommonProxy.Post(url, JsonConvert.SerializeObject(callbackData, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore }));
-                    Website.Instance.logger.Info($"CallBackJava result message: {result}");
+                    Website.Instance.logger.Info($"CallBackJava result message: {result},request={ new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore }}");
 
                     var rs = JObject.Parse(result);
                     if (rs["content"]["result"]?.ToString() != "0000")
                     {
                         //警示
                         _slack.SlackPost(Guid.NewGuid().ToString("N"), "CallBackJava", "ComboRepository/CallBackJava", $"order_mid:{order_mid},CallBackJava回覆失敗,請協助確認！", $"Result ={ result}");
-
+                        UpdateCallBack(true, order_mid, "SYSTEM");
                         return false;
                     }
                     UpdateCallBack(true, order_mid, "SYSTEM");
@@ -466,6 +468,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     Website.Instance.logger.Info($"ComboBookingFlow GetComboProd error. request={JsonConvert.SerializeObject(CartItemModelrs)},return={JsonConvert.SerializeObject(ComboData)}");
                     CallBackJava(new RequestJson
                     {
+                        orderMid = getMstModel?.order_mid,
                         metadata = new RequesteMetaModel
                         {
                             status = "2003",
@@ -480,6 +483,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     Website.Instance.logger.Info($"ComboBookingFlow GetReceiveMaster error. orderOid={queueModel.order.orderOid},return={JsonConvert.SerializeObject(FAData)}");
                     CallBackJava(new RequestJson
                     {
+                        orderMid = getMstModel?.order_mid,
                         metadata = new RequesteMetaModel
                         {
                             status = "2010",
@@ -512,6 +516,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                                 Website.Instance.logger.Info($"ComboBookingFlow QueryPackage error response={JsonConvert.SerializeObject(PkgModel)}");
                                 CallBackJava(new RequestJson
                                 {
+                                    orderMid = getMstModel?.order_mid,
                                     metadata = new RequesteMetaModel
                                     {
                                         status = "2004",
@@ -649,6 +654,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     Website.Instance.logger.Info($"ComboBookingFlow confirmBooking error. request={JsonConvert.SerializeObject(cartBookingValid)},response={JsonConvert.SerializeObject(bookingConfirm)}");
                     CallBackJava(new RequestJson
                     {
+                        orderMid = getMstModel?.order_mid,
                         metadata = new RequesteMetaModel
                         {
                             status = "2002",
@@ -672,6 +678,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     Website.Instance.logger.Info($"ComboBookingFlow CartBooking error.request={JsonConvert.SerializeObject(cartBooking)}, response={JsonConvert.SerializeObject(cartbookingRs)}");
                     CallBackJava(new RequestJson
                     {
+                        orderMid = getMstModel?.order_mid,
                         metadata = new RequesteMetaModel
                         {
                             status = "2002",
@@ -691,6 +698,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     DtlList.order_mid = cartbookingRs.orders[countwithorder].order_mid;
                     DtlList.order_oid = Convert.ToInt32(cartbookingRs.orders[countwithorder].order_oid);
                     DtlList.booking_dtl_order_status = "GL";
+                    countwithorder++;//下一張訂單
                     UpdateDtlStatus(DtlList);
                 }
                 var pushData = new
@@ -707,6 +715,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                 var queueModel = JsonConvert.DeserializeObject<BookingRequestModel>(queue);
                 CallBackJava(new RequestJson
                 {
+                    orderMid = queueModel?.order?.orderMid,
                     metadata = new RequesteMetaModel
                     {
                         status = "9999",
@@ -938,14 +947,13 @@ SET booking_mst_voucher_status='PROCESS', modify_datetime=NOW() WHERE booking_ms
         {
             try
             {
-                var sql = @"SELECT booking_mst_xid, booking_dtl_xid FROM booking_dtl
-WHERE booking_dtl_voucher_status='VOUCHER_OK' AND voucher_file_info::text LIKE :voucher_file_info ";
+                var sql = $"SELECT booking_mst_xid, booking_dtl_xid FROM booking_dtl WHERE booking_dtl_voucher_status='VOUCHER_OK' AND voucher_file_info::text LIKE '%{fileUrl}%' ";
 
-                var voucher_file_info = $"'%{fileUrl}%'";
+                //var voucher_file_info = $"'%{fileUrl}%'";
 
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
-                    return conn.QuerySingle<BookingDtlModel>(sql, new { voucher_file_info });
+                    return conn.QuerySingle<BookingDtlModel>(sql);
                 }
             }
             catch (Exception ex)
@@ -1026,7 +1034,7 @@ FROM booking_dtl WHERE booking_mst_xid=:booking_mst_xid ";
                 RequestJavaModel JavaApi = new RequestJavaModel()
                 {
                     apiKey = Website.Instance.Configuration["KKdayAPI:Body:ApiKey"],
-                    userOid = Website.Instance.Configuration["KKdayAPI:Body:UserOid"],
+                    userOid = Website.Instance.Configuration["KKdayAPI:Body:B2dUserOid"],
                     locale = "zh-tw",
                     ver = Website.Instance.Configuration["KKdayAPI:Body:Ver"],
                     ipaddress = GetLocalIPAddress(),
