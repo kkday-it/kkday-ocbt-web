@@ -395,11 +395,11 @@ namespace KKday.Web.OCBT.Models.Repository
             }
         }
 
-        public CartBookingRsModel CartBooking(List<CartBookingModel> rq)
+        public CartBookingRsModel CartBooking(List<CartBookingModel> rq,string parent_order_mid)
         {
             try
             {
-                string url = $"{Website.Instance.Configuration["WMS_API:URL"]}v2/Booking/CartBookingAR/1";
+                string url = $"{Website.Instance.Configuration["WMS_API:URL"]}v2/Booking/CartBookingAR/{parent_order_mid}";
                 var result = CommonProxy.Post(url, JsonConvert.SerializeObject(rq));
                 return JsonConvert.DeserializeObject<CartBookingRsModel>(result);
             }
