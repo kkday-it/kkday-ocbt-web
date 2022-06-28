@@ -11,9 +11,13 @@
     <PackageReference Include="log4net" Version="2.0.14" />
     <PackageReference Include="StackExchange.Redis" Version="2.5.61" />
     <PackageReference Include="Dapper" Version="2.0.123" />
-    <PackageReference Include="Npgsql" Version="6.0.4" />
     <PackageReference Include="log4net.Ext.Json" Version="2.0.10.1" />
     <PackageReference Include="AWSSDK.S3" Version="3.7.9.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="3.1.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -32,6 +36,10 @@
     <None Remove="log4net.Ext.Json" />
     <None Remove="AWSSDK.S3" />
     <None Remove="Models\Model\Voucher\" />
+    <None Remove="Microsoft.EntityFrameworkCore" />
+    <None Remove="Microsoft.EntityFrameworkCore.Design" />
+    <None Remove="Npgsql" />
+    <None Remove="Migrations\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="AppCode\" />
@@ -49,8 +57,14 @@
     <Folder Include="Controllers\V1\" />
     <Folder Include="Models\Model\Product\" />
     <Folder Include="Models\Model\Voucher\" />
+    <Folder Include="Migrations\" />
   </ItemGroup>
   <ItemGroup>
     <Content Remove="wwwroot\css\pages\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\OCBT.Infra\OCBT.Infra.csproj">
+      <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
+    </ProjectReference>
   </ItemGroup>
 </Project>

@@ -41,8 +41,6 @@ namespace KKday.Web.OCBT.Models.Repository
                     crtBrowserVersion="1",
                     multiPricePlatform="03",
                     sourceCode="B2D",
-                    eventTime = order.eventTime,
-                    
                     modules =new modulesData()
                     
                 };
