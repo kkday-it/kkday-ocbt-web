@@ -945,14 +945,13 @@ SET booking_mst_voucher_status='PROCESS', modify_datetime=NOW() WHERE booking_ms
         {
             try
             {
-                var sql = @"SELECT booking_mst_xid, booking_dtl_xid FROM booking_dtl
-WHERE booking_dtl_voucher_status='VOUCHER_OK' AND voucher_file_info::text LIKE :voucher_file_info ";
+                var sql = $"SELECT booking_mst_xid, booking_dtl_xid FROM booking_dtl WHERE booking_dtl_voucher_status='VOUCHER_OK' AND voucher_file_info::text LIKE '%{fileUrl}%' ";
 
-                var voucher_file_info = $"'%{fileUrl}%'";
+                //var voucher_file_info = $"'%{fileUrl}%'";
 
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
-                    return conn.QuerySingle<BookingDtlModel>(sql, new { voucher_file_info });
+                    return conn.QuerySingle<BookingDtlModel>(sql);
                 }
             }
             catch (Exception ex)
