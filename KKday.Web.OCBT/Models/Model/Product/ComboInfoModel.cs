@@ -34,9 +34,10 @@ namespace KKday.Web.OCBT.Models.Model.Product
     public class ComboDataModel
     {
         public string status { get; set; }
-        public ComboInfoModel combo_info { get; set; }
+        public ComboInfoModel comboInfo { get; set; }
         public string error_code { get; set; }
         public string error_desc { get; set; }
+        
     }
     public class ComboReturnModel
     {
