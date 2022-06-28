@@ -868,9 +868,16 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     if (conn.QuerySingle<int>(sqlCount, new { order_mid }) > 0)
                     {
                         var sqlParam = @"UPDATE public.booking_dtl 
-SET booking_dtl_voucher_status='PROCESS' WHERE order_mid=:order_mid";
+SET booking_dtl_voucher_status='PROCESS', modify_datetime=NOW() WHERE order_mid=:order_mid RETURNING booking_mst_xid ";
                         // Start Update DTL Voucher status
-                        conn.Execute(sqlParam, new { order_mid });
+                        var mst_xid = conn.QuerySingle<long>(sqlParam, new { order_mid });
+                        if (mst_xid > 0)
+                        {
+                            var sqlUpdMst = @"UPDATE public.booking_mst 
+SET booking_mst_voucher_status='PROCESS', modify_datetime=NOW() WHERE booking_mst_xid=:mst_xid ";
+                            // Start Update MST Voucher status
+                            conn.Execute(sqlUpdMst, new { mst_xid });
+                        }
                     }
                 }
             }
