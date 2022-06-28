@@ -154,7 +154,7 @@ namespace KKday.Web.OCBT.Service
                         if (vouhOkOrders.Count() == totalCount)
                         {
                             // 所有子單憑證到齊=>修改母單訂單狀態
-                            _orderRepos.UpdateMstVoucherStatus(main.booking_mst_xid, "VOUCHER_OK", "false");
+                            _orderRepos.UpdateMstVoucherStatus(main.booking_mst_xid, "VOUCHER_OK");
 
                             // CallBackJava Rq
                             var callBackJson = new RequestJson
@@ -183,8 +183,6 @@ namespace KKday.Web.OCBT.Service
                             // CallBackJava
                             _comboBookRepos.CallBackJava(callBackJson, main.order_mid);
 
-                            // 所有子單憑證到齊=>修改母單訂單狀態
-                            _orderRepos.UpdateMstVoucherStatus(main.booking_mst_xid, "VOUCHER_OK", "true");
                             // 代表所有憑證到齊且CallBack Java => End;
                             break;
                         }
