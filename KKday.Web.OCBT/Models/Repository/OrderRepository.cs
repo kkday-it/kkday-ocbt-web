@@ -190,11 +190,10 @@ FROM booking_mst m WHERE m.booking_mst_order_status='GL' AND m.order_mid=:order_
                 throw ex;
             }
         }
-        public OrderRsModel QueryBookingDtl(int booking_mst_xid, string booking_dtl_voucher_status = null)
+        public List<OrderDtlModel> QueryBookingDtl(int booking_mst_xid, string booking_dtl_voucher_status = null)
         {
             try
             {
-                OrderRsModel rs = new OrderRsModel();
                 string sql = @"SELECT order_mid, booking_dtl_voucher_status, voucher_file_info
 FROM booking_dtl WHERE booking_mst_xid=:booking_mst_xid ";
 
@@ -203,11 +202,8 @@ FROM booking_dtl WHERE booking_mst_xid=:booking_mst_xid ";
                 SqlMapper.AddTypeHandler(typeof(List<string>), new ObjectJsonMapper());
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
-                    rs.order_dtl_list = conn.Query<OrderDtlModel>(sql, new { booking_mst_xid, booking_dtl_voucher_status }).ToList();
-                    rs.count = rs.order_dtl_list.Count();
-                    rs.result = "0000";
+                    return conn.Query<OrderDtlModel>(sql, new { booking_mst_xid, booking_dtl_voucher_status }).ToList();
                 }
-                return rs;
             }
             catch (Exception ex)
             {
@@ -296,57 +292,6 @@ SET booking_mst_voucher_status=:status, modify_datetime=NOW()";
             {
                 throw ex;
             }
-        }
-        public bool CheckDtl(int booking_mst_xid, string order_mid)
-        {
-            var is_true = false;
-
-            try
-            {
-                var dtl = QueryBookingDtl(booking_mst_xid);
-                if (dtl.result == "0000" && dtl.order_dtl_list?.Count > 0)
-                {
-                    // PROCESS + VOUCHER_OK = Total 子單
-                    var totalCount = dtl.count;
-                    // 應處理的子單筆數
-                    var processCount = dtl.order_dtl_list.Where(s => s.booking_dtl_voucher_status == "PROCESS")?.Select(x => x.order_mid).Count() ?? 0;
-                    // 已處理的子單筆數
-                    var vouhOkCount = dtl.order_dtl_list.Where(s => s.booking_dtl_voucher_status == "VOUCHER_OK")?.Count() ?? 0;
-                    // 沒有待處理的子單 ＆＆ 所有子單階已處理完畢 => CallBackJava
-                    if (processCount == 0 && totalCount == vouhOkCount)
-                    {
-                        is_true = true;
-                        // CallBackJava
-                        RequestJson callBackJson = new RequestJson
-                        {
-                            orderMid = order_mid,
-                            metadata = new RequesteMetaModel
-                            {
-                                status = "2000",
-                                description = "OCBT取得憑證OK"
-                            },
-                            data = new RequestDataModel()
-                        };
-                        dtl.order_dtl_list.ForEach(x =>
-                        {
-                            callBackJson.data.orderinfo.Add(new RequestOrderInfoModel
-                            {
-                                kkOrderNo = x.order_mid,
-                                ticket = x.voucher_file_info,
-                                type = "URL",
-                                fileExtention = "PDF",
-                                result = "OK"
-                            });
-                        });
-                        _comboBookingRepos.CallBackJava(callBackJson);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-            return is_true;
         }
 
         #endregion Voucher BackgroundService
