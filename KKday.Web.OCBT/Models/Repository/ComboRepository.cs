@@ -941,20 +941,18 @@ SET booking_mst_voucher_status='PROCESS', modify_datetime=NOW() WHERE booking_ms
                 Website.Instance.logger.Info($"ComboRepos CheckOrderFromB2d error. message:{ex.Message}, stackTrace:{ex.StackTrace}");
             }
         }
-        public (string mst, string dtl) UpdateBookingDtlCB(string fileUrl)
+        public BookingDtlModel GetBookingDtlInfo(string fileUrl)
         {
             try
             {
-                var sql = $@"UPDATE public.booking_dtl 
-SET booking_dtl_voucher_status=:status, modify_datetime=NOW() 
-WHERE booking_dtl_voucher_status='VOUCHER_OK' AND voucher_file_info::text LIKE :_fileUrl
-RETURNING booking_mst_xid, booking_dtl_xid ";
-                var _fileUrl = $"'%{fileUrl}%'";
-                using(var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
-                {
-                    var rs = conn.QuerySingle<OrderDtlModel>(sql, new { fileUrl });
+                var sql = @"SELECT booking_mst_xid, booking_dtl_xid FROM booking_dtl
+WHERE booking_dtl_voucher_status='VOUCHER_OK' AND voucher_file_info::text LIKE :voucher_file_info ";
 
-                    return (rs?.booking_mst_xid.ToString() ?? "", rs?.booking_dtl_order_status.ToString() ?? "");
+                var voucher_file_info = $"'%{fileUrl}%'";
+
+                using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
+                {
+                    return conn.QuerySingle<BookingDtlModel>(sql, new { voucher_file_info });
                 }
             }
             catch (Exception ex)
@@ -962,17 +960,18 @@ RETURNING booking_mst_xid, booking_dtl_xid ";
                 throw ex;
             }
         }
-        public RsModel UpdateMstVoucherStatus(long mst_xid, string status)
+
+        public RsModel UpdateMstVoucherStatus(long booking_mst_xid, string booking_mst_voucher_status)
         {
             RsModel rs = new RsModel { result = "0001" };
             try
             {
                 var sql = @"UPDATE public.booking_mst 
-SET booking_dtl_voucher_status=:status, modify_datetime=NOW() WHERE booking_mst_xid=:mst_xid";
+SET booking_mst_voucher_status=:booking_mst_voucher_status, modify_datetime=NOW() WHERE booking_mst_xid=:booking_mst_xid";
 
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
-                    if (conn.Execute(sql, new { mst_xid, status }) > 0)
+                    if (conn.Execute(sql, new { booking_mst_xid, booking_mst_voucher_status }) > 0)
                     {
                         rs.result = "0000";
                     }
@@ -984,17 +983,17 @@ SET booking_dtl_voucher_status=:status, modify_datetime=NOW() WHERE booking_mst_
             }
             return rs;
         }
-        public RsModel UpdateDtlVoucherStatus(long mst_xid, string status)
+        public RsModel UpdateDtlVoucherStatus(long booking_dtl_xid, string booking_dtl_voucher_status)
         {
             RsModel rs = new RsModel { result = "0001" };
             try
             {
                 var sql = @"UPDATE public.booking_dtl 
-SET booking_dtl_voucher_status=:status, modify_datetime=NOW() WHERE booking_mst_xid=:mst_xid";
+SET booking_dtl_voucher_status=:booking_dtl_voucher_status, modify_datetime=NOW() WHERE booking_dtl_xid=:booking_dtl_xid";
 
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
-                    if (conn.Execute(sql, new { mst_xid, status }) > 0)
+                    if (conn.Execute(sql, new { booking_dtl_xid, booking_dtl_voucher_status }) > 0)
                     {
                         rs.result = "0000";
                     }
