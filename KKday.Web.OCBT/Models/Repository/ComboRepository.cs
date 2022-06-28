@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using KKday.Web.OCBT.Models.Model.Product;
 using Microsoft.Extensions.DependencyInjection;
 using KKday.Web.OCBT.Models.Model.Order;
+using KKday.Web.OCBT.Models.Model;
 
 namespace KKday.Web.OCBT.Models.Repository
 {
@@ -890,7 +891,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
         {
             try
             {
-                string sqlCount = @"SELECT COUNT(0) FROM booking_dtl WHERE order_mid=:order_mid ";
+                string sqlCount = @"SELECT COUNT(1) FROM booking_dtl WHERE order_mid=:order_mid ";
 
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
@@ -913,6 +914,88 @@ SET booking_mst_voucher_status='PROCESS', modify_datetime=NOW() WHERE booking_ms
             catch (Exception ex)
             {
                 Website.Instance.logger.Info($"ComboRepos CheckOrderFromB2d error. message:{ex.Message}, stackTrace:{ex.StackTrace}");
+            }
+        }
+        public (string mst, string dtl) UpdateBookingDtlCB(string fileUrl)
+        {
+            try
+            {
+                var sql = $@"UPDATE public.booking_dtl 
+SET booking_dtl_voucher_status=:status, modify_datetime=NOW() 
+WHERE booking_dtl_voucher_status='VOUCHER_OK' AND voucher_file_info::text LIKE :_fileUrl
+RETURNING booking_mst_xid, booking_dtl_xid ";
+                var _fileUrl = $"'%{fileUrl}%'";
+                using(var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
+                {
+                    var rs = conn.QuerySingle<OrderDtlModel>(sql, new { fileUrl });
+
+                    return (rs?.booking_mst_xid.ToString() ?? "", rs?.booking_dtl_order_status.ToString() ?? "");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+        public RsModel UpdateMstVoucherStatus(long mst_xid, string status)
+        {
+            RsModel rs = new RsModel { result = "0001" };
+            try
+            {
+                var sql = @"UPDATE public.booking_mst 
+SET booking_dtl_voucher_status=:status, modify_datetime=NOW() WHERE booking_mst_xid=:mst_xid";
+
+                using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
+                {
+                    if (conn.Execute(sql, new { mst_xid, status }) > 0)
+                    {
+                        rs.result = "0000";
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                rs.result_message = $"UpdateVoucherStatus Exception: Msg={ex.Message}, StackTrace={ex.StackTrace}";
+            }
+            return rs;
+        }
+        public RsModel UpdateDtlVoucherStatus(long mst_xid, string status)
+        {
+            RsModel rs = new RsModel { result = "0001" };
+            try
+            {
+                var sql = @"UPDATE public.booking_dtl 
+SET booking_dtl_voucher_status=:status, modify_datetime=NOW() WHERE booking_mst_xid=:mst_xid";
+
+                using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
+                {
+                    if (conn.Execute(sql, new { mst_xid, status }) > 0)
+                    {
+                        rs.result = "0000";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                rs.result_message = $"UpdateVoucherStatus Exception: Msg={ex.Message}, StackTrace={ex.StackTrace}";
+            }
+            return rs;
+        }
+        public List<OrderDtlModel> QueryBookingDtl(long booking_mst_xid)
+        {
+            try
+            {
+                string sql = @"SELECT booking_mst_xid, booking_dtl_xid, booking_dtl_voucher_status
+FROM booking_dtl WHERE booking_mst_xid=:booking_mst_xid ";
+                using(var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
+                {
+                    return conn.Query<OrderDtlModel>(sql, new { booking_mst_xid }).ToList();
+                }
+            }
+            catch(Exception ex)
+            {
+                Website.Instance.logger.Info($"ComboRepos QueryBookingDtl error. message:{ex.Message}, stackTrace:{ex.StackTrace}");
+                throw ex;
             }
         }
 
