@@ -166,6 +166,9 @@ namespace KKday.Web.OCBT.Service
                                     description = "OCBT取得憑證OK"
                                 },
                                 data = new RequestDataModel()
+                                {
+                                    orderinfo = new List<RequestOrderInfoModel>()
+                                }
                             };
                             // 將檔案清單放置 CallBackJava
                             subOrders.ForEach(x =>
