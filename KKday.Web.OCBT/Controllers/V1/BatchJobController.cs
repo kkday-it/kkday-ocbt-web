@@ -69,7 +69,8 @@ namespace KKday.Web.OCBT.V1
         /// <summary>
         /// 檢查母單已超過時間但is_callback=false
         /// </summary>
-        private async void CheckCallBack()
+        [HttpGet("CheckCallBack")]
+        public void CheckCallBack()
         {
             string guidKey = Guid.NewGuid().ToString();
 
@@ -81,22 +82,18 @@ namespace KKday.Web.OCBT.V1
                 {
                     master.order_mst_list?.ForEach(x =>
                     {
-                        // 1. Update DB
-                        var upd = _orderRepos.UpdateIsCallBack(x.booking_mst_xid, true);
-                        if (upd.result == "0000")
+                        // 1. 觸發 CallBackJava
+                        RequestJson callBackJson = new RequestJson
                         {
-                            // 2. 觸發 CallBackJava
-                            RequestJson callBackJson = new RequestJson
+                            orderMid = x.order_mid,
+                            requestUuid = guidKey,
+                            metadata = new RequesteMetaModel
                             {
-                                orderMid = x.order_mid,
-                                metadata = new RequesteMetaModel
-                                {
-                                    status = "2010",
-                                    description = "執行成功 => 檢查已超時但尚未CallBack的母單"
-                                }
-                            };
-                            _comboBookRepos.CallBackJava(callBackJson);
-                        }
+                                status = "2010",
+                                description = string.IsNullOrEmpty(x.monitor_start_datetime) ? "成立子單失敗" : "取憑證時效過期或成立子單失敗"
+                            }
+                        };
+                        _comboBookRepos.CallBackJava(callBackJson);
                     });
                 }
             }
