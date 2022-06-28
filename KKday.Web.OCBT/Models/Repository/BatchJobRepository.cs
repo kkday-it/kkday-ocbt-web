@@ -66,7 +66,7 @@ group by a.booking_mst_xid,a.order_mid,a.go_date,a.booking_mst_order_status,a.bo
                     OrderApiRqModel orderApi = new OrderApiRqModel()
                     {
                         apiKey = Website.Instance.Configuration["KKdayAPI:Body:ApiKey"],
-                        userOid = Website.Instance.Configuration["KKdayAPI:Body:UserOid"],
+                        userOid = Website.Instance.Configuration["KKdayAPI:Body:B2dUserOid"],
                         locale = "zh-tw",
                         ipaddress = _comboBookingRepos.GetLocalIPAddress()
                     };

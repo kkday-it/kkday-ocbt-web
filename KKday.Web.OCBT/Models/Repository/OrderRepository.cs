@@ -465,7 +465,7 @@ WHERE booking_mst_xid=:mst_xid ";
                     OrderApiRqModel orderApi = new OrderApiRqModel()
                     {
                         apiKey = Website.Instance.Configuration["KKdayAPI:Body:ApiKey"],
-                        userOid = Website.Instance.Configuration["KKdayAPI:Body:UserOid"],
+                        userOid = Website.Instance.Configuration["KKdayAPI:Body:OcbtUserOid"],
                         locale = "zh-tw",
                         ipaddress = _comboBookingRepos.GetLocalIPAddress()
                     };
