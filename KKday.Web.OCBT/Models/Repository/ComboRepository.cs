@@ -691,6 +691,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     DtlList.order_mid = cartbookingRs.orders[countwithorder].order_mid;
                     DtlList.order_oid = Convert.ToInt32(cartbookingRs.orders[countwithorder].order_oid);
                     DtlList.booking_dtl_order_status = "GL";
+                    countwithorder++;//下一張訂單
                     UpdateDtlStatus(DtlList);
                 }
                 var pushData = new
