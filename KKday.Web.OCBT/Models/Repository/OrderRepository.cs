@@ -369,8 +369,8 @@ SET booking_mst_voucher_status=:status, modify_datetime=NOW()";
 
             try
             {
-                string sqlStmt = @"SELECT booking_mst_xid FROM booking_mst WHERE is_callback=false 
-AND now() > monitor_start_datetime + ( CASE WHEN voucher_deadline=0 THEN 20 ELSE voucher_deadline END ||' minutes' )::interval";
+                string sqlStmt = @"SELECT booking_mst_xid,order_mid,monitor_start_datetime FROM booking_mst WHERE is_callback=false 
+AND  (now() > monitor_start_datetime + ( CASE WHEN voucher_deadline=0 THEN 20 ELSE voucher_deadline END ||' minutes' )::interval  or monitor_start_datetime is null)";
 
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
