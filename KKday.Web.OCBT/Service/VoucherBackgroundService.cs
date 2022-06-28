@@ -86,6 +86,8 @@ namespace KKday.Web.OCBT.Service
 
                 while (true)
                 {
+                    Website.Instance.logger.Info($"Voucher while do: {JsonConvert.SerializeObject(main.order_mid)}");
+
                     // 暫定=>沒填 Default 等待20min
                     var deadLine = main.voucher_deadline == 0 ? 20 : main.voucher_deadline;
                     var voucherDeadline = Convert.ToDateTime(main.monitor_start_datetime).AddMinutes(deadLine);
@@ -93,10 +95,12 @@ namespace KKday.Web.OCBT.Service
                     if (DateTime.Now > voucherDeadline)
                     {
                         // 時間超過後結束回圈，交由排程接手執行
+                        Website.Instance.logger.Info($"Voucher while do timeout order_mid: {main.order_mid}");
                         break;
                     }
                     else
                     {
+                        Website.Instance.logger.Info($"Voucher while doing process order_mid: {main.order_mid}");
                         // 取得所有待處理子單(PROCESS)
                         var subOrders = _orderRepos.QueryBookingDtl(main.booking_mst_xid);
                         // PROCESS + VOUCHER_OK = Total 子單
