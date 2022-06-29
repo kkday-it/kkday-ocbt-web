@@ -351,7 +351,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     {
                         booking_mst_xid = getMstModel.booking_mst_xid
                     });
-                    if (getDtlModel?.Count > 0 && getMstModel.booking_mst_voucher_status != "GL")
+                    if (getDtlModel?.Count > 0 && getMstModel.booking_mst_voucher_status != "GL" )
                     {
                         #region call JAVA API 確認子訂單內容是否一致
                         var JavaOrderList = GetMappingOrderList(queueModel.order.orderMid);//取得java訂單明細
@@ -382,7 +382,13 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                                         orders.booking_dtl_voucher_status = "PROCESS";
                                         UpdateDtlStatus(orders);
                                     });
+                                    UpdateMstStatus("GL", queueModel.order.orderMid , "SYSTEM");//更新Modify的時間
+                                    _redis.Push("ComboBookingVoucher", JsonConvert.SerializeObject(new
+                                    {
+                                        master_order_mid = queueModel.order.orderMid
+                                    }));//將Java資料傳入redisQueue
 
+                                    return;
 
                                 }
                                 else//不吻合 callBackJava
@@ -642,17 +648,17 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                                     confirmOrder.skus.Add(new Model.CartBooking.ConfirmSku
                                     {
                                         price = 1,
-                                        qty = skusData.qty,
+                                        qty = skusData.qty*skuOid.qty,
                                         sku_id = skusData.sku_oid
                                     });
                                     bookingModel.skus.Add(new Model.CartBooking.SkuModel
                                     {
                                         sku_oid = skusData.sku_oid,
-                                        qty = (int)skusData.qty
+                                        qty = (int)skusData.qty * skuOid.qty
                                     });
 
-                                    tempTotalPrice += (double)skusData.qty * 1;
-                                    dtlTotalQty += skusData.qty;
+                                    tempTotalPrice += (double)skusData.qty * skuOid.qty * 1;
+                                    dtlTotalQty += skusData.qty * skuOid.qty;
                                 }
                                 insertdata.real_booking_qty = (int)dtlTotalQty;
                                 insertDtlData.Add(insertdata);
