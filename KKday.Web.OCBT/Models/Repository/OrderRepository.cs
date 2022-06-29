@@ -476,7 +476,7 @@ WHERE booking_mst_xid=:mst_xid ";
                     json.Add("memoMsg", orderMemo);
                     orderApi.json = json;
 
-                    string url = $"{Website.Instance.Configuration["ApiUrl:JAVA"]}/v2/order/memo//" + request?.parentOrderMid;
+                    string url = $"{Website.Instance.Configuration["ApiUrl:JAVA"]}/v2/order/memo/" + request?.parentOrderMid;
                     string result = _orderProxy.Post(url, JsonConvert.SerializeObject(orderApi,
                                 Newtonsoft.Json.Formatting.None,
                                 new JsonSerializerSettings
