@@ -372,20 +372,38 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                         }
                         else
                         {
-                            bool isMappingOrder = JavaOrderList.content.orderList.Where(y => y.orderStatus == "GO").Select(x => x.orderMid).Except(getDtlModel.Select(y => y.order_mid)).Count() == 0 ? true : false;
-                            if (isMappingOrder)//如果完全吻合
+                            if (JavaOrderList?.content?.orderList?.Where(x => x.parent == true && x.orderStatus == "GO")?.Count() > 0)//如果母單狀態為GO才需要執行
                             {
-                                getDtlModel.ForEach(orders =>
+                                bool isMappingOrder = JavaOrderList.content.orderList.Where(y => y.parent == false && y.orderStatus == "GO").Select(x => x.orderMid).Except(getDtlModel.Select(y => y.order_mid)).Count() == 0 ? true : false;
+                                if (isMappingOrder)//如果完全吻合
                                 {
-                                    orders.booking_dtl_voucher_status = "PROCESS";
-                                    UpdateDtlStatus(orders);
-                                });
+                                    getDtlModel.ForEach(orders =>
+                                    {
+                                        orders.booking_dtl_voucher_status = "PROCESS";
+                                        UpdateDtlStatus(orders);
+                                    });
 
 
+                                }
+                                else//不吻合 callBackJava
+                                {
+                                    Website.Instance.logger.Info($"ComboBookingFlow MappingOrderwithDB Error. OrderMid={queueModel.order.orderMid},return={JsonConvert.SerializeObject(JavaOrderList)},DB={JsonConvert.SerializeObject(getDtlModel)}");
+                                    RequestJson jsonData = new RequestJson
+                                    {
+                                        orderMid = getMstModel?.order_mid,
+                                        metadata = new RequesteMetaModel
+                                        {
+                                            status = "2009",
+                                            description = "母子訂單關聯不對，中止執行"
+                                        }
+                                    };
+                                    CallBackJava(jsonData, queueModel.order.orderMid);
+                                    throw new Exception("母子訂單關聯不對，中止執行");
+                                }
                             }
-                            else//不吻合 callBackJava
+                            else
                             {
-                                Website.Instance.logger.Info($"ComboBookingFlow MappingOrderwithDB Error. OrderMid={queueModel.order.orderMid},return={JsonConvert.SerializeObject(JavaOrderList)},DB={JsonConvert.SerializeObject(getDtlModel)}");
+                                Website.Instance.logger.Info($"ComboBookingFlow ParentOrder status Error. OrderMid={queueModel.order.orderMid},return={JsonConvert.SerializeObject(JavaOrderList)}");
                                 RequestJson jsonData = new RequestJson
                                 {
                                     orderMid = getMstModel?.order_mid,
@@ -396,7 +414,9 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                                     }
                                 };
                                 CallBackJava(jsonData, queueModel.order.orderMid);
+                                throw new Exception("母子訂單關聯不對，中止執行");
                             }
+                            
                         }
                         #endregion
                     }
