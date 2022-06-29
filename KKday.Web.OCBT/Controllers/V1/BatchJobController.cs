@@ -84,7 +84,7 @@ namespace KKday.Web.OCBT.V1
                         RequestJson callBackJson = new RequestJson
                         {
                             orderMid = x.order_mid,
-                            requestUuid = guidKey,
+                            request_uuid = guidKey,
                             metadata = new RequesteMetaModel
                             {
                                 status = "2010",

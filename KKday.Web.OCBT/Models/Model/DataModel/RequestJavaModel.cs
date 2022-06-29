@@ -15,7 +15,7 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
     public class RequestJson
     {
         public string orderMid { get; set; }
-        public string requestUuid { get; set; }
+        public string request_uuid { get; set; }
         public RequestDataModel data { get; set; }
         public RequesteMetaModel metadata { get; set; }
         //orderInfo需要參數
