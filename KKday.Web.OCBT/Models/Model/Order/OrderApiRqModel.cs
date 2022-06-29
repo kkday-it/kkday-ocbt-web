@@ -23,8 +23,8 @@ namespace KKday.Web.OCBT.Models.Model.Order
     {
         public string result { get; set; }
         public string msg { get; set; }
-        public string parentOrderMid { get; set; }
-        public string parentOrderStatus { get; set; }
+        //public string parentOrderMid { get; set; }
+        //public string parentOrderStatus { get; set; }
         public List<relastionMappingOrderListResModel> orderList { get; set; }
     }
 
@@ -32,5 +32,6 @@ namespace KKday.Web.OCBT.Models.Model.Order
     {
         public string orderMid { get; set; }
         public string orderStatus { get; set; }
+        public Boolean parent { get; set; }
     }
 }

@@ -126,7 +126,8 @@ RETURNING booking_mst_xid";
         {
             try
             {
-                string sql = @"UPDATE booking_mst SET booking_mst_order_status=:order_status,modify_user=:modify_user,modify_datetime=now(),monitor_start_datetime=now() where order_mid=:order_mid";
+                //string sql = @"UPDATE booking_mst SET booking_mst_order_status=:order_status,modify_user=:modify_user,modify_datetime=now(),monitor_start_datetime=now() where order_mid=:order_mid";
+                string sql = @"UPDATE booking_mst SET booking_mst_order_status=:order_status,booking_mst_voucher_status='PROCESS',modify_user=:modify_user,modify_datetime=now(),monitor_start_datetime=now() where order_mid=:order_mid"; //當未接到webhook時使用 phil/6/28
 
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
@@ -371,20 +372,38 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                         }
                         else
                         {
-                            bool isMappingOrder = JavaOrderList.content.orderList.Where(y => y.orderStatus == "GO").Select(x => x.orderMid).Except(getDtlModel.Select(y => y.order_mid)).Count() == 0 ? true : false;
-                            if (isMappingOrder)//如果完全吻合
+                            if (JavaOrderList?.content?.orderList?.Where(x => x.parent == true && x.orderStatus == "GO")?.Count() > 0)//如果母單狀態為GO才需要執行
                             {
-                                getDtlModel.ForEach(orders =>
+                                bool isMappingOrder = JavaOrderList.content.orderList.Where(y => y.parent == false && y.orderStatus == "GO").Select(x => x.orderMid).Except(getDtlModel.Select(y => y.order_mid)).Count() == 0 ? true : false;
+                                if (isMappingOrder)//如果完全吻合
                                 {
-                                    orders.booking_dtl_voucher_status = "PROCESS";
-                                    UpdateDtlStatus(orders);
-                                });
+                                    getDtlModel.ForEach(orders =>
+                                    {
+                                        orders.booking_dtl_voucher_status = "PROCESS";
+                                        UpdateDtlStatus(orders);
+                                    });
 
 
+                                }
+                                else//不吻合 callBackJava
+                                {
+                                    Website.Instance.logger.Info($"ComboBookingFlow MappingOrderwithDB Error. OrderMid={queueModel.order.orderMid},return={JsonConvert.SerializeObject(JavaOrderList)},DB={JsonConvert.SerializeObject(getDtlModel)}");
+                                    RequestJson jsonData = new RequestJson
+                                    {
+                                        orderMid = getMstModel?.order_mid,
+                                        metadata = new RequesteMetaModel
+                                        {
+                                            status = "2009",
+                                            description = "母子訂單關聯不對，中止執行"
+                                        }
+                                    };
+                                    CallBackJava(jsonData, queueModel.order.orderMid);
+                                    throw new Exception("母子訂單關聯不對，中止執行");
+                                }
                             }
-                            else//不吻合 callBackJava
+                            else
                             {
-                                Website.Instance.logger.Info($"ComboBookingFlow MappingOrderwithDB Error. OrderMid={queueModel.order.orderMid},return={JsonConvert.SerializeObject(JavaOrderList)},DB={JsonConvert.SerializeObject(getDtlModel)}");
+                                Website.Instance.logger.Info($"ComboBookingFlow ParentOrder status Error. OrderMid={queueModel.order.orderMid},return={JsonConvert.SerializeObject(JavaOrderList)}");
                                 RequestJson jsonData = new RequestJson
                                 {
                                     orderMid = getMstModel?.order_mid,
@@ -395,7 +414,9 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                                     }
                                 };
                                 CallBackJava(jsonData, queueModel.order.orderMid);
+                                throw new Exception("母子訂單關聯不對，中止執行");
                             }
+                            
                         }
                         #endregion
                     }
@@ -698,6 +719,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     DtlList.order_mid = cartbookingRs.orders[countwithorder].order_mid;
                     DtlList.order_oid = Convert.ToInt32(cartbookingRs.orders[countwithorder].order_oid);
                     DtlList.booking_dtl_order_status = "GL";
+                    DtlList.booking_dtl_voucher_status = "PROCESS";////當未接到webhook時使用 phil/6/28
                     countwithorder++;//下一張訂單
                     UpdateDtlStatus(DtlList);
                 }
@@ -1043,7 +1065,7 @@ FROM booking_dtl WHERE booking_mst_xid=:booking_mst_xid ";
                         memberUuid = Website.Instance.Configuration["KKdayAPI:Body:MemberUuid"],
                         deviceId = deviceId,
                         tokenKey = MD5Tool.GetMD5(Website.Instance.Configuration["KKdayAPI:Body:MemberUuid"] + deviceId +
-                                                      Website.Instance.Configuration["KKAPI_INPUT:JSON:TOKEN"])
+                                                      Website.Instance.Configuration["KKdayAPI:Body:Token"])
                     }
                 };
                 string result = CommonProxy.Post(url, JsonConvert.SerializeObject(JavaApi, new JsonSerializerSettings

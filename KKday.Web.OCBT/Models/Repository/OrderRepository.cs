@@ -467,7 +467,8 @@ WHERE booking_mst_xid=:mst_xid ";
                         apiKey = Website.Instance.Configuration["KKdayAPI:Body:ApiKey"],
                         userOid = Website.Instance.Configuration["KKdayAPI:Body:OcbtUserOid"],
                         locale = "zh-tw",
-                        ipaddress = _comboBookingRepos.GetLocalIPAddress()
+                        ipaddress = _comboBookingRepos.GetLocalIPAddress(),
+                        ver = Website.Instance.Configuration["KKdayAPI:Body:Ver"]
                     };
 
                     Dictionary<string, object> json = new Dictionary<string, object>();
