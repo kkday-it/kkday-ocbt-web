@@ -493,7 +493,7 @@ WHERE booking_mst_xid=:mst_xid ";
             }
             catch (Exception ex)
             {
-                Website.Instance.logger.Fatal($"OrderRepository_NotifyParentMemo_exception:GuidKey={request?.requestUuid}, Message={ex.Message}, StackTrace={ex.StackTrace}");
+                Website.Instance.logger.Fatal($"OrderRepository_NotifyParentMemo_exception:GuidKey={request?.requestUuid}, Message={ex.Message}, StackTrace={ex.StackTrace}",request?.requestUuid);
                 throw ex;
             }
         }
