@@ -138,11 +138,11 @@ group by a.booking_mst_xid,a.order_mid,a.go_date,a.booking_mst_order_status,a.bo
                     conn.Execute(sqlStmt,new { is_need_back= isNeedBack, booking_mst_xid=bookingMstXid });
                 }
 
-                Website.Instance.logger.Info($"BatchJobRepository_UdpIsNeedBack:GuidKey={guidKey},booking_mst_xid:{bookingMstXid} 已為BACK or CX");
+                Website.Instance.logger.Info($"BatchJobRepository_UdpIsNeedBack:GuidKey={guidKey},booking_mst_xid:{bookingMstXid} 已為BACK or CX", guidKey);
             }
             catch (Exception ex)
             {
-                Website.Instance.logger.Fatal($"BatchJobRepository_UdpIsNeedBack_exception:GuidKey={guidKey}, Message={ex.Message}, StackTrace={ex.StackTrace}");
+                Website.Instance.logger.Fatal($"BatchJobRepository_UdpIsNeedBack_exception:GuidKey={guidKey}, Message={ex.Message}, StackTrace={ex.StackTrace}", guidKey);
 
             }
             return true;
@@ -157,11 +157,11 @@ group by a.booking_mst_xid,a.order_mid,a.go_date,a.booking_mst_order_status,a.bo
                     string sqlStmt = @"update booking_mst set is_back=:is_back,modify_user='SYSTEM',modify_datetime=now() where booking_mst_xid =:booking_mst_xid";
                     conn.Execute(sqlStmt, new { is_back = isBack, booking_mst_xid=bookingMstXid });
                 }
-                Website.Instance.logger.Info($"BatchJobRepository_UdpIsBack:GuidKey={guidKey},booking_mst_xid:{bookingMstXid} 壓為BACKs");
+                Website.Instance.logger.Info($"BatchJobRepository_UdpIsBack:GuidKey={guidKey},booking_mst_xid:{bookingMstXid} 壓為BACKs", guidKey);
             }
             catch (Exception ex)
             {
-                Website.Instance.logger.Fatal($"BatchJobRepository_UdpIsBack_exception:GuidKey={guidKey}, Message={ex.Message}, StackTrace={ex.StackTrace}");
+                Website.Instance.logger.Fatal($"BatchJobRepository_UdpIsBack_exception:GuidKey={guidKey}, Message={ex.Message}, StackTrace={ex.StackTrace}", guidKey);
             }
             return true;
         }
@@ -204,7 +204,7 @@ group by a.booking_mst_xid,a.order_mid,a.go_date,a.booking_mst_order_status,a.bo
             }
             catch (Exception ex)
             {
-                Website.Instance.logger.Info($"ParentStatusBack error.order_mid={JsonConvert.SerializeObject(order_mid)} ,Message={ex.Message},stackTrace={ex.StackTrace}");
+                Website.Instance.logger.Info($"ParentStatusBack error.order_mid={JsonConvert.SerializeObject(order_mid)} ,Message={ex.Message},stackTrace={ex.StackTrace}", guidKey);
                 return false;
             }
         }

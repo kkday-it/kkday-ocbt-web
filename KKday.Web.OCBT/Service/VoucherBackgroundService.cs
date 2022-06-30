@@ -100,7 +100,7 @@ namespace KKday.Web.OCBT.Service
                     }
                     else
                     {
-                        Website.Instance.logger.Info($"Voucher while doing process order_mid: {main.order_mid}");
+                        Website.Instance.logger.Info($"Voucher while doing process order_mid: {main.order_mid} main.booking_mst_xid:{main?.booking_mst_xid}");
                         // 取得所有待處理子單(PROCESS)
                         var subOrders = _orderRepos.QueryBookingDtl(main.booking_mst_xid);
                         // PROCESS + VOUCHER_OK = Total 子單
@@ -110,11 +110,13 @@ namespace KKday.Web.OCBT.Service
 
                         if (processOrders?.Count() > 0)
                         {
+                            Website.Instance.logger.Info($"Voucher while doing process order_mid: {main.order_mid} processOrders.count: {processOrders?.Count()}");
                             var processOrderMids = processOrders?.Select(x => x.order_mid).ToArray();
                             // Call WMS: 取訂單明細
                             var _processOrderMids = _orderRepos.QueryOrders(processOrderMids);
                             foreach (var sub in _processOrderMids?.order)
                             {
+                                Website.Instance.logger.Info($"Voucher while doing process order_mid: {main.order_mid} sub.order_mid:{sub.orderMid } sub.orderStatus: {sub.orderStatus}");
                                 if (sub.orderStatus == "GO_OK")
                                 {
                                     // 1. 查詢憑證List
@@ -157,6 +159,7 @@ namespace KKday.Web.OCBT.Service
                         // 重新檢查是否所有子單憑證到齊，到齊CallBack Java
                         if (vouhOkOrders.Count() == totalCount)
                         {
+                            Website.Instance.logger.Info($"Voucher while doing process order_mid: {main.order_mid} voucher ok");
                             // 所有子單憑證到齊=>修改母單訂單狀態
                             _orderRepos.UpdateMstVoucherStatus(main.booking_mst_xid, "VOUCHER_OK");
 
