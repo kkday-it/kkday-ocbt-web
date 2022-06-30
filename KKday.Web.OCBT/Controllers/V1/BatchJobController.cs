@@ -85,7 +85,7 @@ namespace KKday.Web.OCBT.V1
                             request_uuid = guidKey,
                             metadata = new RequesteMetaModel
                             {
-                                status = "2010",
+                                status = "2005",
                                 description = string.IsNullOrEmpty(x.monitor_start_datetime) ? "成立子單失敗" : "取憑證時效過期或成立子單失敗"
                             }
                         };
