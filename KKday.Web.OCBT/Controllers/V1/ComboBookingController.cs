@@ -76,48 +76,48 @@ namespace KKday.Web.OCBT.V1
                 {
                     // Rq Log
                     Website.Instance.logger.Info($"ComboBooking Start Get S3: FileName = {rq.fileUrl}");
-                    // 將子單狀態 Update CB 並取出 母+子 單 Xid
-                    var xid = _comboRepos.UpdateBookingDtlCB(rq.fileUrl);
-                    if (!string.IsNullOrEmpty(xid.mst) && !string.IsNullOrEmpty(xid.dtl))
-                    {
-                        // Get From S3
-                        var getByte = _amazonS3Service.GetObject(rq.fileUrl).Result;
-                        // Rs Log
-                        Website.Instance.logger.Info($"Get S3 Rs = {JsonConvert.SerializeObject(getByte)}");
+                    // 取出 母+子 單 Xid
+                    var xid = _comboRepos.GetBookingDtlInfo(rq.fileUrl);
+                    // 先將狀態CB
+                    _comboRepos.UpdateDtlVoucherStatus(xid.booking_dtl_xid, "CB");
 
-                        if (getByte != null)
+                    // Get From S3
+                    var getByte = _amazonS3Service.GetObject(rq.fileUrl).Result;
+                    // Rs Log
+                    Website.Instance.logger.Info($"Get S3 Rs = {JsonConvert.SerializeObject(getByte)}");
+
+                    if (getByte != null)
+                    {
+                        if (getByte.Success)
                         {
-                            if (getByte.Success)
+                            rs.metadata.status = "3001";
+                            rs.metadata.description = "回傳檔案成功";
+                            // Byte[] Convert to Base64
+                            rs.data = new ResponseDataModel
                             {
-                                rs.metadata.status = "3001";
-                                rs.metadata.description = "回傳檔案成功";
-                                // Byte[] Convert to Base64
-                                rs.data = new ResponseDataModel
+                                base64str = Convert.ToBase64String(getByte.DataBytes)
+                            };
+                            // Update Dtl.Status GL
+                            var updGL = _comboRepos.UpdateDtlVoucherStatus(xid.booking_dtl_xid, "GL");
+                            // Check All Dtl GL then Update Mst.Status GL
+                            var dtlList = _comboRepos.QueryBookingDtl(xid.booking_mst_xid);
+                            if (dtlList?.Count > 0)
+                            {
+                                var glList = dtlList.Where(s => s.booking_dtl_voucher_status == "GL")?.Count() ?? 0;
+                                if (dtlList.Count == glList)
                                 {
-                                    base64str = Convert.ToBase64String(getByte.DataBytes)
-                                };
-                                // Update Dtl.Status GL
-                                var updGL = _comboRepos.UpdateDtlVoucherStatus(Convert.ToInt64(xid.dtl), "GL");
-                                // Check All Dtl GL then Update Mst.Status GL
-                                var dtlList = _comboRepos.QueryBookingDtl(Convert.ToInt64(xid.mst));
-                                if (dtlList?.Count > 0)
-                                {
-                                    var glList = dtlList.Where(s => s.booking_dtl_voucher_status == "GL")?.Count() ?? 0;
-                                    if (dtlList.Count == glList)
-                                    {
-                                        // Update Mst.Status GL 
-                                        var updMstGL = _comboRepos.UpdateMstVoucherStatus(Convert.ToInt64(xid.mst), "GL");
-                                    }
+                                    // Update Mst.Status GL 
+                                    var updMstGL = _comboRepos.UpdateMstVoucherStatus(xid.booking_mst_xid, "GL");
                                 }
                             }
-                            else
-                            {
-                                // Get S3 Fail
-                                rs.metadata.description = "不存在此檔案";
-                                // Download Fail
-                                _comboRepos.UpdateDtlVoucherStatus(Convert.ToInt64(xid.dtl), "DOWNLOAD_FAIL");
-                                _comboRepos.UpdateMstVoucherStatus(Convert.ToInt64(xid.mst), "DOWNLOAD_FAIL");
-                            }
+                        }
+                        else
+                        {
+                            // Get S3 Fail
+                            rs.metadata.description = "不存在此檔案";
+                            // Download Fail
+                            _comboRepos.UpdateDtlVoucherStatus(xid.booking_dtl_xid, "DOWNLOAD_FAIL");
+                            _comboRepos.UpdateMstVoucherStatus(xid.booking_mst_xid, "DOWNLOAD_FAIL");
                         }
                     }
                 }

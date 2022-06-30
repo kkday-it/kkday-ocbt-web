@@ -104,7 +104,7 @@ RETURNING booking_mst_xid";
             }
         }
 
-        public int UpdateCallBack(bool is_callBack,string order_mid,string modify_user)
+        public int UpdateCallBack(bool is_callBack, string order_mid, string modify_user)
         {
             try
             {
@@ -112,7 +112,7 @@ RETURNING booking_mst_xid";
 
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
-                    return conn.QuerySingle<int>(sql, new { order_mid, is_callBack, modify_user });
+                    return conn.Execute(sql, new { order_mid, is_callBack, modify_user });
                 }
 
             }
@@ -126,7 +126,8 @@ RETURNING booking_mst_xid";
         {
             try
             {
-                string sql = @"UPDATE booking_mst SET booking_mst_order_status=:order_status,modify_user=:modify_user,modify_datetime=now(),monitor_start_datetime=now() where order_mid=:order_mid";
+                //string sql = @"UPDATE booking_mst SET booking_mst_order_status=:order_status,modify_user=:modify_user,modify_datetime=now(),monitor_start_datetime=now() where order_mid=:order_mid";
+                string sql = @"UPDATE booking_mst SET booking_mst_order_status=:order_status,booking_mst_voucher_status='PROCESS',modify_user=:modify_user,modify_datetime=now(),monitor_start_datetime=now() where order_mid=:order_mid"; //當未接到webhook時使用 phil/6/28
 
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
@@ -275,22 +276,24 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     RequestJavaModel callbackData = new RequestJavaModel
                     {
                         apiKey = Website.Instance.Configuration["KKdayAPI:Body:ApiKey"],
-                        userOid = Website.Instance.Configuration["KKdayAPI:Body:UserOid"],
+                        userOid = Website.Instance.Configuration["KKdayAPI:Body:OcbtUserOid"],
                         locale = "zh-tw",
                         ipaddress = GetLocalIPAddress(),
-                        json = jsonData
+                        json = jsonData,
+                        ver= Website.Instance.Configuration["KKdayAPI:Body:Ver"]
 
                     };
+                    
                     string url = $"{Website.Instance.Configuration["COMBO_SETTING:JAVA"]}/api/ocbt/ocbtNotifyCb";
                     string result = CommonProxy.Post(url, JsonConvert.SerializeObject(callbackData, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore }));
-                    Website.Instance.logger.Info($"CallBackJava result message: {result}");
+                    Website.Instance.logger.Info($"CallBackJava result message: {result},request={ new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore }}", jsonData?.request_uuid);
 
                     var rs = JObject.Parse(result);
                     if (rs["content"]["result"]?.ToString() != "0000")
                     {
                         //警示
                         _slack.SlackPost(Guid.NewGuid().ToString("N"), "CallBackJava", "ComboRepository/CallBackJava", $"order_mid:{order_mid},CallBackJava回覆失敗,請協助確認！", $"Result ={ result}");
-
+                        UpdateCallBack(true, order_mid, "SYSTEM");
                         return false;
                     }
                     UpdateCallBack(true, order_mid, "SYSTEM");
@@ -304,7 +307,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
             }
             catch (Exception ex)
             {
-                Website.Instance.logger.Info($"CallBackJava Error message:{ex.Message},stacktrace:{ex.StackTrace}");
+                Website.Instance.logger.Info($"CallBackJava Error message:{ex.Message},stacktrace:{ex.StackTrace}", jsonData?.request_uuid);
                 return false;
             }
         }
@@ -348,7 +351,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     {
                         booking_mst_xid = getMstModel.booking_mst_xid
                     });
-                    if (getDtlModel?.Count > 0 && getMstModel.booking_mst_voucher_status != "GL")
+                    if (getDtlModel?.Count > 0 && getMstModel.booking_mst_voucher_status != "GL" )
                     {
                         #region call JAVA API 確認子訂單內容是否一致
                         var JavaOrderList = GetMappingOrderList(queueModel.order.orderMid);//取得java訂單明細
@@ -369,20 +372,44 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                         }
                         else
                         {
-                            bool isMappingOrder = JavaOrderList.content.orderList.Where(y => y.orderStatus == "GO").Select(x => x.orderMid).Except(getDtlModel.Select(y => y.order_mid)).Count() == 0 ? true : false;
-                            if (isMappingOrder)//如果完全吻合
+                            if (JavaOrderList?.content?.orderList?.Where(x => x.parent == true && x.orderStatus == "GO")?.Count() > 0)//如果母單狀態為GO才需要執行
                             {
-                                getDtlModel.ForEach(orders =>
+                                bool isMappingOrder = JavaOrderList.content.orderList.Where(y => y.parent == false && y.orderStatus == "GO").Select(x => x.orderMid).Except(getDtlModel.Select(y => y.order_mid)).Count() == 0 ? true : false;
+                                if (isMappingOrder)//如果完全吻合
                                 {
-                                    orders.booking_dtl_voucher_status = "PROCESS";
-                                    UpdateDtlStatus(orders);
-                                });
+                                    getDtlModel.ForEach(orders =>
+                                    {
+                                        orders.booking_dtl_voucher_status = "PROCESS";
+                                        UpdateDtlStatus(orders);
+                                    });
+                                    UpdateMstStatus("GL", queueModel.order.orderMid , "SYSTEM");//更新Modify的時間
+                                    _redis.Push("ComboBookingVoucher", JsonConvert.SerializeObject(new
+                                    {
+                                        master_order_mid = queueModel.order.orderMid
+                                    }));//將Java資料傳入redisQueue
 
+                                    return;
 
+                                }
+                                else//不吻合 callBackJava
+                                {
+                                    Website.Instance.logger.Info($"ComboBookingFlow MappingOrderwithDB Error. OrderMid={queueModel.order.orderMid},return={JsonConvert.SerializeObject(JavaOrderList)},DB={JsonConvert.SerializeObject(getDtlModel)}");
+                                    RequestJson jsonData = new RequestJson
+                                    {
+                                        orderMid = getMstModel?.order_mid,
+                                        metadata = new RequesteMetaModel
+                                        {
+                                            status = "2009",
+                                            description = "母子訂單關聯不對，中止執行"
+                                        }
+                                    };
+                                    CallBackJava(jsonData, queueModel.order.orderMid);
+                                    throw new Exception("母子訂單關聯不對，中止執行");
+                                }
                             }
-                            else//不吻合 callBackJava
+                            else
                             {
-                                Website.Instance.logger.Info($"ComboBookingFlow MappingOrderwithDB Error. OrderMid={queueModel.order.orderMid},return={JsonConvert.SerializeObject(JavaOrderList)},DB={JsonConvert.SerializeObject(getDtlModel)}");
+                                Website.Instance.logger.Info($"ComboBookingFlow ParentOrder status Error. OrderMid={queueModel.order.orderMid},return={JsonConvert.SerializeObject(JavaOrderList)}");
                                 RequestJson jsonData = new RequestJson
                                 {
                                     orderMid = getMstModel?.order_mid,
@@ -393,7 +420,9 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                                     }
                                 };
                                 CallBackJava(jsonData, queueModel.order.orderMid);
+                                throw new Exception("母子訂單關聯不對，中止執行");
                             }
+                            
                         }
                         #endregion
                     }
@@ -426,7 +455,22 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     event_time = queueModel?.order?.eventTime,
                     skus = new List<ComboSkusModel>()
                 };
+                if (!string.IsNullOrEmpty(cartItem.event_time))
+                {
+                    string eventTempTime = cartItem.event_time;
 
+                    cartItem.event_time = "";
+                    char[] splitEventTime = eventTempTime.ToCharArray();
+                    for (int i = 0; i < eventTempTime.Length; i++)
+                    {
+                        cartItem.event_time += splitEventTime[i];
+                        if (i == 1)
+                        {
+                            cartItem.event_time += ":";
+                        }
+                    }
+
+                }
                 foreach (var sku in queueModel?.order?.lstPrice)
                 {
                     cartItem.skus.Add(new ComboSkusModel
@@ -443,13 +487,15 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                 };
                 CartItemModelrs.cart_items.Add(cartItem);
                 var ComboData = GetComboProd(CartItemModelrs);//取得ComboData的資料
-                UpdateMstComboModel(queueModel.order?.orderMid, "SYSTEM", ComboData, ComboData.voucher_max_time);//將comboBooking等資訊押入至資料庫
+                int voucherMaxTime = ComboData?.data?.First()?.comboInfo?.voucher_max_time != null ? (int)ComboData?.data?.First()?.comboInfo?.voucher_max_time : 0;
+                UpdateMstComboModel(queueModel.order?.orderMid, "SYSTEM", ComboData, voucherMaxTime);//將comboBooking等資訊押入至資料庫
                 #endregion
                 if (ComboData.meta.status != "100000")//取得combo產品失敗
                 {
                     Website.Instance.logger.Info($"ComboBookingFlow GetComboProd error. request={JsonConvert.SerializeObject(CartItemModelrs)},return={JsonConvert.SerializeObject(ComboData)}");
                     CallBackJava(new RequestJson
                     {
+                        orderMid = getMstModel?.order_mid,
                         metadata = new RequesteMetaModel
                         {
                             status = "2003",
@@ -458,12 +504,13 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     }, queueModel.order.orderMid);
                     throw new Exception("ComboBookingFlow GetComboProd error.");
                 }
-                var FAData = GetReceiveMaster(queueModel.order.orderOid);
+                var FAData = GetReceiveMaster(queueModel.order.orderMasterOid);
                 if (FAData.metadata.status != "AD00")
                 {
                     Website.Instance.logger.Info($"ComboBookingFlow GetReceiveMaster error. orderOid={queueModel.order.orderOid},return={JsonConvert.SerializeObject(FAData)}");
                     CallBackJava(new RequestJson
                     {
+                        orderMid = getMstModel?.order_mid,
                         metadata = new RequesteMetaModel
                         {
                             status = "2010",
@@ -484,7 +531,8 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                 {
                     foreach (var prodDtl in ComboData.data)//取得ComboData.Data中的資訊
                     {
-                        foreach (var prod in prodDtl.combo_info.skus.Where(x => x.sku_oid == skuOid.skuOid).Select(y => y.combo_prod).First())
+
+                        foreach (var prod in prodDtl.comboInfo.skus.Where(x => x.sku_oid == skuOid.skuOid).Select(y => y.combo_prod).First())
                         {
                             var ProdModel = QueryProduct(prod.prod_oid,
                         FAData.data.FirstOrDefault().fa_vouch_currency, queueModel.order.memberLang, queueModel.order.contactCountryCd);//取得產品資訊與產品版本
@@ -495,13 +543,14 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                                 Website.Instance.logger.Info($"ComboBookingFlow QueryPackage error response={JsonConvert.SerializeObject(PkgModel)}");
                                 CallBackJava(new RequestJson
                                 {
+                                    orderMid = getMstModel?.order_mid,
                                     metadata = new RequesteMetaModel
                                     {
                                         status = "2004",
                                         description = "OCBT查詢子商品失敗 （下架或其他原因）"
                                     }
                                 }, queueModel.order.orderMid);
-                                throw new Exception("ComboBookingFlow GetReceiveMaster error.");
+                                throw new Exception("ComboBookingFlow QueryPackage error.");
                             }
                             else
                             {
@@ -535,6 +584,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                                 bookingModel.currency = FAData.data.First().fa_vouch_currency;
                                 bookingModel.skus = new List<Model.CartBooking.SkuModel>();
                                 bookingModel.checkoutDate = DateTime.Now.AddMonths(1).ToString("yyyy-MM-25 HH:mm:ss");
+                                bookingModel.eventTime = cartItem.event_time;
                                 #endregion
                                 //補上bookingInfo
                                 bookingModel.bookingInfo = new Model.CartBooking.bookingInfoModel
@@ -565,7 +615,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                                     prod_version = ProdModel.version,
                                     time_zone = ProdModel.timezone,
                                     has_event = (bool?)PkgModel.item.First().has_event,
-                                    event_time = queueModel.order.eventTime,
+                                    event_time = cartItem.event_time,
                                     begin_date = queueModel.order.begLstGoDt,
                                     end_date = queueModel.order.endLstBackDt,
                                     currency = FAData.data.FirstOrDefault().fa_vouch_currency,
@@ -584,7 +634,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                                 if (confirmOrder?.has_event == false)
                                 {
                                     confirmOrder.event_time = "";
-                                    bookingModel.eventTime = "";
+                                    bookingModel.eventTime = null;
                                 }
                                 else//有場次lstBackDt需要為空
                                 {
@@ -598,17 +648,17 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                                     confirmOrder.skus.Add(new Model.CartBooking.ConfirmSku
                                     {
                                         price = 1,
-                                        qty = skusData.qty,
+                                        qty = skusData.qty*skuOid.qty,
                                         sku_id = skusData.sku_oid
                                     });
                                     bookingModel.skus.Add(new Model.CartBooking.SkuModel
                                     {
                                         sku_oid = skusData.sku_oid,
-                                        qty = (int)skusData.qty
+                                        qty = (int)skusData.qty * skuOid.qty
                                     });
 
-                                    tempTotalPrice += (double)skusData.qty * 1;
-                                    dtlTotalQty += skusData.qty;
+                                    tempTotalPrice += (double)skusData.qty * skuOid.qty * 1;
+                                    dtlTotalQty += skusData.qty * skuOid.qty;
                                 }
                                 insertdata.real_booking_qty = (int)dtlTotalQty;
                                 insertDtlData.Add(insertdata);
@@ -631,6 +681,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     Website.Instance.logger.Info($"ComboBookingFlow confirmBooking error. request={JsonConvert.SerializeObject(cartBookingValid)},response={JsonConvert.SerializeObject(bookingConfirm)}");
                     CallBackJava(new RequestJson
                     {
+                        orderMid = getMstModel?.order_mid,
                         metadata = new RequesteMetaModel
                         {
                             status = "2002",
@@ -654,6 +705,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     Website.Instance.logger.Info($"ComboBookingFlow CartBooking error.request={JsonConvert.SerializeObject(cartBooking)}, response={JsonConvert.SerializeObject(cartbookingRs)}");
                     CallBackJava(new RequestJson
                     {
+                        orderMid = getMstModel?.order_mid,
                         metadata = new RequesteMetaModel
                         {
                             status = "2002",
@@ -673,6 +725,8 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     DtlList.order_mid = cartbookingRs.orders[countwithorder].order_mid;
                     DtlList.order_oid = Convert.ToInt32(cartbookingRs.orders[countwithorder].order_oid);
                     DtlList.booking_dtl_order_status = "GL";
+                    DtlList.booking_dtl_voucher_status = "PROCESS";////當未接到webhook時使用 phil/6/28
+                    countwithorder++;//下一張訂單
                     UpdateDtlStatus(DtlList);
                 }
                 var pushData = new
@@ -689,6 +743,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                 var queueModel = JsonConvert.DeserializeObject<BookingRequestModel>(queue);
                 CallBackJava(new RequestJson
                 {
+                    orderMid = queueModel?.order?.orderMid,
                     metadata = new RequesteMetaModel
                     {
                         status = "9999",
@@ -783,7 +838,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
         {
             try
             {
-                string url = $"{Website.Instance.Configuration["COMBO_SETTING:Prod"]}/api/v1/skus/combo-info";
+                string url = $"{Website.Instance.Configuration["COMBO_SETTING:Prod"]}api/v1/skus/combo-info";
 
                 string result = "";
                 using (var handler = new HttpClientHandler())
@@ -916,20 +971,17 @@ SET booking_mst_voucher_status='PROCESS', modify_datetime=NOW() WHERE booking_ms
                 Website.Instance.logger.Info($"ComboRepos CheckOrderFromB2d error. message:{ex.Message}, stackTrace:{ex.StackTrace}");
             }
         }
-        public (string mst, string dtl) UpdateBookingDtlCB(string fileUrl)
+        public BookingDtlModel GetBookingDtlInfo(string fileUrl)
         {
             try
             {
-                var sql = $@"UPDATE public.booking_dtl 
-SET booking_dtl_voucher_status=:status, modify_datetime=NOW() 
-WHERE booking_dtl_voucher_status='VOUCHER_OK' AND voucher_file_info::text LIKE :_fileUrl
-RETURNING booking_mst_xid, booking_dtl_xid ";
-                var _fileUrl = $"'%{fileUrl}%'";
-                using(var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
-                {
-                    var rs = conn.QuerySingle<OrderDtlModel>(sql, new { fileUrl });
+                var sql = $"SELECT booking_mst_xid, booking_dtl_xid FROM booking_dtl WHERE booking_dtl_voucher_status='VOUCHER_OK' AND voucher_file_info::text LIKE '%{fileUrl}%' ";
 
-                    return (rs?.booking_mst_xid.ToString() ?? "", rs?.booking_dtl_order_status.ToString() ?? "");
+                //var voucher_file_info = $"'%{fileUrl}%'";
+
+                using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
+                {
+                    return conn.QuerySingle<BookingDtlModel>(sql);
                 }
             }
             catch (Exception ex)
@@ -937,17 +989,18 @@ RETURNING booking_mst_xid, booking_dtl_xid ";
                 throw ex;
             }
         }
-        public RsModel UpdateMstVoucherStatus(long mst_xid, string status)
+
+        public RsModel UpdateMstVoucherStatus(long booking_mst_xid, string booking_mst_voucher_status)
         {
             RsModel rs = new RsModel { result = "0001" };
             try
             {
                 var sql = @"UPDATE public.booking_mst 
-SET booking_dtl_voucher_status=:status, modify_datetime=NOW() WHERE booking_mst_xid=:mst_xid";
+SET booking_mst_voucher_status=:booking_mst_voucher_status, modify_datetime=NOW() WHERE booking_mst_xid=:booking_mst_xid";
 
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
-                    if (conn.Execute(sql, new { mst_xid, status }) > 0)
+                    if (conn.Execute(sql, new { booking_mst_xid, booking_mst_voucher_status }) > 0)
                     {
                         rs.result = "0000";
                     }
@@ -959,17 +1012,17 @@ SET booking_dtl_voucher_status=:status, modify_datetime=NOW() WHERE booking_mst_
             }
             return rs;
         }
-        public RsModel UpdateDtlVoucherStatus(long mst_xid, string status)
+        public RsModel UpdateDtlVoucherStatus(long booking_dtl_xid, string booking_dtl_voucher_status)
         {
             RsModel rs = new RsModel { result = "0001" };
             try
             {
                 var sql = @"UPDATE public.booking_dtl 
-SET booking_dtl_voucher_status=:status, modify_datetime=NOW() WHERE booking_mst_xid=:mst_xid";
+SET booking_dtl_voucher_status=:booking_dtl_voucher_status, modify_datetime=NOW() WHERE booking_dtl_xid=:booking_dtl_xid";
 
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
-                    if (conn.Execute(sql, new { mst_xid, status }) > 0)
+                    if (conn.Execute(sql, new { booking_dtl_xid, booking_dtl_voucher_status }) > 0)
                     {
                         rs.result = "0000";
                     }
@@ -1003,13 +1056,13 @@ FROM booking_dtl WHERE booking_mst_xid=:booking_mst_xid ";
         {
             try
             {
-                string url = $"{Website.Instance.Configuration["COMBO_SETTING:JAVA"]}/api/v2/order/info/relationMapping/{order_mid}";
+                string url = $"{Website.Instance.Configuration["COMBO_SETTING:JAVA"]}api/v2/order/info/relationMapping/{order_mid}";
                 //呼叫java母子狀態
                 string deviceId = Guid.NewGuid().ToString();
                 RequestJavaModel JavaApi = new RequestJavaModel()
                 {
                     apiKey = Website.Instance.Configuration["KKdayAPI:Body:ApiKey"],
-                    userOid = Website.Instance.Configuration["KKdayAPI:Body:UserOid"],
+                    userOid = Website.Instance.Configuration["KKdayAPI:Body:B2dUserOid"],
                     locale = "zh-tw",
                     ver = Website.Instance.Configuration["KKdayAPI:Body:Ver"],
                     ipaddress = GetLocalIPAddress(),
@@ -1018,10 +1071,13 @@ FROM booking_dtl WHERE booking_mst_xid=:booking_mst_xid ";
                         memberUuid = Website.Instance.Configuration["KKdayAPI:Body:MemberUuid"],
                         deviceId = deviceId,
                         tokenKey = MD5Tool.GetMD5(Website.Instance.Configuration["KKdayAPI:Body:MemberUuid"] + deviceId +
-                                                      Website.Instance.Configuration["KKAPI_INPUT:JSON:TOKEN"])
+                                                      Website.Instance.Configuration["KKdayAPI:Body:Token"])
                     }
                 };
-                string result = CommonProxy.Post(url, JsonConvert.SerializeObject(JavaApi));
+                string result = CommonProxy.Post(url, JsonConvert.SerializeObject(JavaApi, new JsonSerializerSettings
+                {
+                    NullValueHandling = NullValueHandling.Ignore
+                }));
                 return JsonConvert.DeserializeObject<KKday.Web.OCBT.Models.Model.Order.relastionMappingResModel>(result);
             }
             catch (Exception ex)

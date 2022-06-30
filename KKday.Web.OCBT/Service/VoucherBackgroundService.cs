@@ -86,6 +86,8 @@ namespace KKday.Web.OCBT.Service
 
                 while (true)
                 {
+                    Website.Instance.logger.Info($"Voucher while do: {JsonConvert.SerializeObject(main.order_mid)}");
+
                     // 暫定=>沒填 Default 等待20min
                     var deadLine = main.voucher_deadline == 0 ? 20 : main.voucher_deadline;
                     var voucherDeadline = Convert.ToDateTime(main.monitor_start_datetime).AddMinutes(deadLine);
@@ -93,10 +95,12 @@ namespace KKday.Web.OCBT.Service
                     if (DateTime.Now > voucherDeadline)
                     {
                         // 時間超過後結束回圈，交由排程接手執行
+                        Website.Instance.logger.Info($"Voucher while do timeout order_mid: {main.order_mid}");
                         break;
                     }
                     else
                     {
+                        Website.Instance.logger.Info($"Voucher while doing process order_mid: {main.order_mid} main.booking_mst_xid:{main?.booking_mst_xid}");
                         // 取得所有待處理子單(PROCESS)
                         var subOrders = _orderRepos.QueryBookingDtl(main.booking_mst_xid);
                         // PROCESS + VOUCHER_OK = Total 子單
@@ -106,11 +110,13 @@ namespace KKday.Web.OCBT.Service
 
                         if (processOrders?.Count() > 0)
                         {
+                            Website.Instance.logger.Info($"Voucher while doing process order_mid: {main.order_mid} processOrders.count: {processOrders?.Count()}");
                             var processOrderMids = processOrders?.Select(x => x.order_mid).ToArray();
                             // Call WMS: 取訂單明細
                             var _processOrderMids = _orderRepos.QueryOrders(processOrderMids);
                             foreach (var sub in _processOrderMids?.order)
                             {
+                                Website.Instance.logger.Info($"Voucher while doing process order_mid: {main.order_mid} sub.order_mid:{sub.orderMid } sub.orderStatus: {sub.orderStatus}");
                                 if (sub.orderStatus == "GO_OK")
                                 {
                                     // 1. 查詢憑證List
@@ -127,7 +133,7 @@ namespace KKday.Web.OCBT.Service
                                                 byte[] bytes = Convert.FromBase64String(file.file.First().encode_str);
                                                 // 3. 上傳至 s3
                                                 var upload = _amazonS3Service.UploadObject(x.file_name, "application/pdf", bytes).Result;
-                                                if (upload.Success) fileInfo.Add(x.file_name);
+                                                if (upload.Success) fileInfo.Add(upload.FileName);
                                             }
                                         });
 
@@ -153,6 +159,7 @@ namespace KKday.Web.OCBT.Service
                         // 重新檢查是否所有子單憑證到齊，到齊CallBack Java
                         if (vouhOkOrders.Count() == totalCount)
                         {
+                            Website.Instance.logger.Info($"Voucher while doing process order_mid: {main.order_mid} voucher ok");
                             // 所有子單憑證到齊=>修改母單訂單狀態
                             _orderRepos.UpdateMstVoucherStatus(main.booking_mst_xid, "VOUCHER_OK");
 
@@ -166,6 +173,9 @@ namespace KKday.Web.OCBT.Service
                                     description = "OCBT取得憑證OK"
                                 },
                                 data = new RequestDataModel()
+                                {
+                                    orderinfo = new List<RequestOrderInfoModel>()
+                                }
                             };
                             // 將檔案清單放置 CallBackJava
                             subOrders.ForEach(x =>

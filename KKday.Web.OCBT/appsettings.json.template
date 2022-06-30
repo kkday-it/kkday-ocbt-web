@@ -19,13 +19,17 @@
     "CompanyData": {
       "AccountXid": "## COMP_ACCOUNT_XID ##",
       "CompanyXid": "## COMP_COMPANY_XID ##",
-      "ChannelOid":"## COMP_CHANNEL_OID ##"
+      "ChannelOid":"## COMP_CHANNEL_OID ##",
+      "TelCountryCode": "## COMP_TEL_COUNTRY_CODE ##",
+      "TelPhone": "## COMP_TEL_PHONE ##",
+      "Email": "## COMP_EMAIL ##"
     }
   },
   "KKdayAPI": {
     "Body": {
       "ApiKey": "kkdayapi",
-      "UserOid": "5",
+      "OcbtUserOid": "30",
+      "B2dUserOid":"5",
       "Ver": "1.0.1",
       "IPAddress": "127.0.0.1",
       "MemberUuid": "## MEMBER_UUID ##",

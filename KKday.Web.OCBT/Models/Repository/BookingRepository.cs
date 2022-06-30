@@ -28,10 +28,10 @@ namespace KKday.Web.OCBT.Models.Repository
                     company_xid=Website.Instance.Configuration["WMS_API:CompanyData:CompanyXid"],
                     contactFirstname=order.contactFirstname,
                     contactLastname=order.contactLastname,
-                    contactEmail=order.contactEmail,
-                    telCountryCd=order.telCountryCd,
-                    contactTel=order.contactTel,
-                    contactCountryCd=order.contactCountryCd,
+                    contactEmail= Website.Instance.Configuration["WMS_API:CompanyData:Email"],//order.contactEmail,
+                    telCountryCd = Website.Instance.Configuration["WMS_API:CompanyData:TelCountryCode"],//order.telCountryCd,
+                    contactTel = Website.Instance.Configuration["WMS_API:CompanyData:TelPhone"],//order.contactTel,
+                    contactCountryCd =order.contactCountryCd,
                     lstGoDt=order.begLstGoDt,
                     lstBackDt=order.endLstBackDt,
                     guideLang=order.memberLang,
@@ -41,8 +41,6 @@ namespace KKday.Web.OCBT.Models.Repository
                     crtBrowserVersion="1",
                     multiPricePlatform="03",
                     sourceCode="B2D",
-                    eventTime = order.eventTime,
-                    
                     modules =new modulesData()
                     
                 };
@@ -354,7 +352,7 @@ namespace KKday.Web.OCBT.Models.Repository
                 RequestJavaModel callbackData = new RequestJavaModel
                 {
                     apiKey = Website.Instance.Configuration["KKdayAPI:Body:ApiKey"],
-                    userOid = Website.Instance.Configuration["KKdayAPI:Body:UserOid"],
+                    userOid = Website.Instance.Configuration["KKdayAPI:Body:B2dUserOid"],
                     locale = "zh-tw",
                     ver = Website.Instance.Configuration["KKdayAPI:Body:Ver"],
                     ipaddress = "127.0.0.1",
