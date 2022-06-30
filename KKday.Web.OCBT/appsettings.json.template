@@ -19,7 +19,10 @@
     "CompanyData": {
       "AccountXid": "## COMP_ACCOUNT_XID ##",
       "CompanyXid": "## COMP_COMPANY_XID ##",
-      "ChannelOid":"## COMP_CHANNEL_OID ##"
+      "ChannelOid":"## COMP_CHANNEL_OID ##",
+      "TelCountryCode": "## COMP_TEL_COUNTRY_CODE ##",
+      "TelPhone": "## COMP_TEL_PHONE ##",
+      "Email": "## COMP_EMAIL ##"
     }
   },
   "KKdayAPI": {
