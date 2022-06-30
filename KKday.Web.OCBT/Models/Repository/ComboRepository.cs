@@ -550,7 +550,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                                         description = "OCBT查詢子商品失敗 （下架或其他原因）"
                                     }
                                 }, queueModel.order.orderMid);
-                                throw new Exception("ComboBookingFlow GetReceiveMaster error.");
+                                throw new Exception("ComboBookingFlow QueryPackage error.");
                             }
                             else
                             {
