@@ -38,21 +38,24 @@ namespace KKday.Web.OCBT.Models.Repository
             {
                 OrderRsModel rs = new OrderRsModel();
 
-                string sqlStmt = @"SELECT DISTINCT m.* FROM booking_mst m
+                string sqlStmt = @"SELECT DISTINCT m.booking_mst_xid, m.order_mid, m.order_oid, m.booking_mst_order_status, m.booking_mst_voucher_status
+--, (case booking_model::text when '{}' then null else booking_model end) as booking_model
+--, (case combo_model::text when '{}' then null else combo_model end) as combo_model 
+, m.voucher_deadline, m.prod_oid, m.create_user, to_char(m.create_datetime, 'yyyy-mm-dd') as create_datetime FROM booking_mst m
 LEFT JOIN booking_dtl d ON m.booking_mst_xid =d.booking_mst_xid WHERE 1=1 {FILTER}";
-
+                
                 var _filter = OrderMstFilterParsing(filter, sort, order);
                 sqlStmt = sqlStmt.Replace("{FILTER}", !string.IsNullOrEmpty(_filter.sql) ? _filter.sql : string.Empty);
                 // 相同條件下取出總筆數
                 string sqlCount = $@"SELECT COUNT(c.*) FROM ({sqlStmt}) c";
                 // 最後再加上分頁條件
-                sqlStmt += " LIMIT :limit OFFSET :offset";
+                sqlStmt += "\n LIMIT :limit OFFSET :offset";
                 _filter.args.Add("limit", limit);
                 _filter.args.Add("offset", offset);
                 //Start Query
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
-                    SqlMapper.AddTypeHandler(typeof(Dictionary<string, string>), new ObjectJsonMapper());
+                    SqlMapper.AddTypeHandler(typeof(Dictionary<string, object>), new ObjectJsonMapper());
                     rs.total_count = conn.QuerySingle<int>(sqlCount, _filter.args);
                     rs.order_mst_list = conn.Query<OrderMstModel>(sqlStmt, _filter.args).ToList();
                     rs.count = rs.order_mst_list.Count();
@@ -63,6 +66,7 @@ LEFT JOIN booking_dtl d ON m.booking_mst_xid =d.booking_mst_xid WHERE 1=1 {FILTE
             }
             catch(Exception ex)
             {
+                Website.Instance.logger.Fatal($"OrderRepos FetchOrderMstData Exception: Message={ex.Message}, StackTrace={ex.StackTrace}");
                 throw ex;
             }
         }
@@ -79,12 +83,12 @@ LEFT JOIN booking_dtl d ON m.booking_mst_xid =d.booking_mst_xid WHERE 1=1 {FILTE
                 // Xid 不可為空且須為正整數
                 if (!string.IsNullOrEmpty(id) && id.All(char.IsDigit))
                 {
-                    string sql = @"SELECT * FROM booking_dtl WHERE booking_mst_xid=:booking_mst_xid";
-                    if (!string.IsNullOrEmpty(voucherStatus)) sql += " AND booking_dtl_voucher_status=:voucherStatus";
+                    string sql = @"SELECT order_mid, order_oid, order_master_oid as sub_master_oid, booking_dtl_order_status
+, booking_dtl_voucher_status, prod_oid, package_oid FROM booking_dtl WHERE booking_mst_xid=:booking_mst_xid";
+                    if (!string.IsNullOrEmpty(voucherStatus)) sql += "\n AND booking_dtl_voucher_status=:voucherStatus";
 
                     using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                     {
-                        SqlMapper.AddTypeHandler(typeof(Dictionary<string, string>), new ObjectJsonMapper());
                         SqlMapper.AddTypeHandler(typeof(SkuOid), new ObjectJsonMapper());
 
                         rs.order_dtl_list = conn.Query<OrderDtlModel>(sql, new { booking_mst_xid = Convert.ToInt64(id), voucherStatus }).ToList();
@@ -97,6 +101,7 @@ LEFT JOIN booking_dtl d ON m.booking_mst_xid =d.booking_mst_xid WHERE 1=1 {FILTE
             }
             catch (Exception ex)
             {
+                Website.Instance.logger.Fatal($"OrderRepos FetchOrderDtlData Exception: Message={ex.Message}, StackTrace={ex.StackTrace}");
                 throw ex;
             }
         }
@@ -161,6 +166,7 @@ LEFT JOIN booking_dtl d ON m.booking_mst_xid =d.booking_mst_xid WHERE 1=1 {FILTE
             }
             catch(Exception ex)
             {
+                Website.Instance.logger.Fatal($"OrderRepos OrderMstFilterParsing Exception: Message={ex.Message}, StackTrace={ex.StackTrace}");
                 throw ex;
             }
         }
