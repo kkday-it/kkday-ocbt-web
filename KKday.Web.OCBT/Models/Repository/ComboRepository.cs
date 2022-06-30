@@ -1140,22 +1140,21 @@ SET booking_mst_voucher_status='PROCESS', modify_datetime=NOW() WHERE booking_ms
                 Website.Instance.logger.Info($"ComboRepos CheckOrderFromB2d error. message:{ex.Message}, stackTrace:{ex.StackTrace}");
             }
         }
-        public BookingDtlModel GetBookingDtlInfo(string fileUrl)
+        public BookingDtlModel GetBookingDtlInfo(ConvertBase64Rq rq)
         {
             try
             {
-                var sql = $"SELECT booking_mst_xid, booking_dtl_xid FROM booking_dtl WHERE booking_dtl_voucher_status='VOUCHER_OK' AND voucher_file_info::text LIKE '%{fileUrl}%' ";
-
-                //var voucher_file_info = $"'%{fileUrl}%'";
+                var sql = $"SELECT booking_mst_xid, booking_dtl_xid FROM booking_dtl WHERE booking_dtl_voucher_status IN('VOUCHER_OK','CB','GL','DOWNLOAD_FAIL') AND voucher_file_info::text LIKE  CONCAT('%',@fileUrl,'%') ";
 
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
                 {
-                    return conn.QuerySingle<BookingDtlModel>(sql);
+                    return conn.QuerySingle<BookingDtlModel>(sql,new { rq.fileUrl });
                 }
             }
             catch (Exception ex)
             {
-                throw ex;
+                Website.Instance.logger.Fatal($"ComboRepos GetBookingDtlInfo error. message:{ex.Message}, stackTrace:{ex.StackTrace}", rq?.requestUuid);
+                return null;
             }
         }
 
@@ -1181,7 +1180,7 @@ SET booking_mst_voucher_status=:booking_mst_voucher_status, modify_datetime=NOW(
             }
             return rs;
         }
-        public RsModel UpdateDtlVoucherStatus(long booking_dtl_xid, string booking_dtl_voucher_status)
+        public RsModel UpdateDtlVoucherStatus(long booking_dtl_xid, string booking_dtl_voucher_status,string request_uuid="")
         {
             RsModel rs = new RsModel { result = "0001" };
             try

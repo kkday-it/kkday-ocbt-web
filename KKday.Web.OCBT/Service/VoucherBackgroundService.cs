@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using iTextSharp.text;
+using iTextSharp.text.pdf;
 using KKday.Web.OCBT.AppCode;
 using KKday.Web.OCBT.Models.Model.DataModel;
 using KKday.Web.OCBT.Models.Repository;
@@ -130,10 +132,33 @@ namespace KKday.Web.OCBT.Service
                                             var file = _orderRepos.DownloadVoucher(sub.orderMid, x.order_file_id);
                                             if (file.result == "00" && file.result_msg == "OK")
                                             {
-                                                byte[] bytes = Convert.FromBase64String(file.file.First().encode_str);
                                                 // 3. 上傳至 s3
-                                                var upload = _amazonS3Service.UploadObject(x.file_name, "application/pdf", bytes).Result;
-                                                if (upload.Success) fileInfo.Add(upload.FileName);
+                                                byte[] bytes = Convert.FromBase64String(file.file.First().encode_str);
+                                                if (file.file.First().content_type == "application/pdf")
+                                                {
+                                                    
+                                                    var upload = _amazonS3Service.UploadObject(x.file_name, "application/pdf", bytes).Result;
+                                                    if (upload.Success) fileInfo.Add(upload.FileName);
+                                                }
+                                                else if (file.file.First().content_type == "image/jpeg" || file.file.First().content_type == "image/jpg" || file.file.First().content_type == "image/png")
+                                                {
+                                                    iTextSharp.text.Image image = iTextSharp.text.Image.GetInstance(bytes);
+
+                                                    using (System.IO.MemoryStream memoryStream = new System.IO.MemoryStream())
+                                                    {
+                                                        Document document = new Document(PageSize.A4, 88f, 88f, 10f, 10f);
+                                                        PdfWriter writer = PdfWriter.GetInstance(document, memoryStream);
+                                                        document.Open();
+                                                        document.Add(image);
+                                                        document.Close();
+                                                        byte[] bytesPdf = memoryStream.ToArray();
+
+                                                        var upload = _amazonS3Service.UploadObject(x.file_name, "application/pdf", bytesPdf).Result;
+                                                        if (upload.Success) fileInfo.Add(upload.FileName);
+
+                                                        memoryStream.Close();
+                                                    }
+                                                }
                                             }
                                         });
 
