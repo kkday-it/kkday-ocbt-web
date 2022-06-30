@@ -476,7 +476,7 @@ WHERE booking_mst_xid=:mst_xid ";
                     json.Add("memoMsg", orderMemo);
                     orderApi.json = json;
 
-                    string url = $"{Website.Instance.Configuration["ApiUrl:JAVA"]}/v2/order/memo//" + request?.parentOrderMid;
+                    string url = $"{Website.Instance.Configuration["COMBO_SETTING:JAVA"]}api/v2/order/memo/" + request?.parentOrderMid;
                     string result = _orderProxy.Post(url, JsonConvert.SerializeObject(orderApi,
                                 Newtonsoft.Json.Formatting.None,
                                 new JsonSerializerSettings
@@ -493,7 +493,7 @@ WHERE booking_mst_xid=:mst_xid ";
             }
             catch (Exception ex)
             {
-                Website.Instance.logger.Fatal($"OrderRepository_NotifyParentMemo_exception:GuidKey={request?.requestUuid}, Message={ex.Message}, StackTrace={ex.StackTrace}");
+                Website.Instance.logger.Fatal($"OrderRepository_NotifyParentMemo_exception:GuidKey={request?.requestUuid}, Message={ex.Message}, StackTrace={ex.StackTrace}",request?.requestUuid);
                 throw ex;
             }
         }

@@ -35,6 +35,7 @@ namespace KKday.Web.OCBT.V1
         {
             try
             {
+                Website.Instance.logger.Info($"SetParentOrderStatusBack start!!");
                 Task.Run(() => DoChkParentOrder());
                 return StatusCode(200, true);
             }
@@ -52,14 +53,11 @@ namespace KKday.Web.OCBT.V1
 
             try
             {
-                //TimeSpan e = new TimeSpan(0, 1, 0);
-                //Thread.Sleep(e);
-
                 _batchJobRepos.SetParentBack(guidKey);
             }
             catch (Exception ex)
             {
-                Website.Instance.logger.Fatal($"ComboBooking_DoChkParentOrder_exception:GuidKey={guidKey}, Message={ex.Message}, StackTrace={ex.StackTrace}");
+                Website.Instance.logger.Fatal($"ComboBooking_DoChkParentOrder_exception:GuidKey={guidKey}, Message={ex.Message}, StackTrace={ex.StackTrace}", guidKey);
 
             }
         }
@@ -71,7 +69,7 @@ namespace KKday.Web.OCBT.V1
         public void CheckCallBack()
         {
             string guidKey = Guid.NewGuid().ToString();
-
+            Website.Instance.logger.Info($"CheckCallBack start!!");
             try
             {
                 // 取得尚未 CallBack 的母單(is_callback=false)
@@ -84,7 +82,7 @@ namespace KKday.Web.OCBT.V1
                         RequestJson callBackJson = new RequestJson
                         {
                             orderMid = x.order_mid,
-                            requestUuid = guidKey,
+                            request_uuid = guidKey,
                             metadata = new RequesteMetaModel
                             {
                                 status = "2010",
@@ -97,7 +95,7 @@ namespace KKday.Web.OCBT.V1
             }
             catch (Exception ex)
             {
-                Website.Instance.logger.Fatal($"CheckCallBack_Exception: Message={ex.Message}, StackTrace={ex.StackTrace}");
+                Website.Instance.logger.Fatal($"CheckCallBack_Exception: Message={ex.Message}, StackTrace={ex.StackTrace}", guidKey);
                 _slack.SlackPost(guidKey, "CheckCallBack", "BatchJobController/CheckCallBack", $"檢查已超時但尚未CallBack的母單異常！", $"Msg={ex.Message}, StackTrace={ex.StackTrace}");
             }
         }

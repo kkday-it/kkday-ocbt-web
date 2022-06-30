@@ -42,7 +42,7 @@ namespace KKday.Web.OCBT.V1
             }
             catch (Exception ex)
             {
-                Website.Instance.logger.Fatal($"OComboBooking_NotifyParentMemo_exception:GuidKey={request?.requestUuid}, Message={ex.Message}, StackTrace={ex.StackTrace}");
+                Website.Instance.logger.Fatal($"OComboBooking_NotifyParentMemo_exception:GuidKey={request?.requestUuid}, Message={ex.Message}, StackTrace={ex.StackTrace}",request?.requestUuid);
                 return new OrderMemoResponseModel
                 {
                     metadata = new ResponseMetaModel
