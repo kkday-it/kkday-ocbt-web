@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -153,7 +154,9 @@ namespace KKday.Web.OCBT.Service
                                                         document.Close();
                                                         byte[] bytesPdf = memoryStream.ToArray();
 
-                                                        var upload = _amazonS3Service.UploadObject(x.file_name, "application/pdf", bytesPdf).Result;
+                                                        string ext = Path.GetExtension(x.file_name);
+
+                                                        var upload = _amazonS3Service.UploadObject(x.file_name.Replace(ext, ".pdf"), "application/pdf", bytesPdf).Result;
                                                         if (upload.Success) fileInfo.Add(upload.FileName);
 
                                                         memoryStream.Close();
