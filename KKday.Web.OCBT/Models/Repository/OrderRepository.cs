@@ -172,7 +172,7 @@ LEFT JOIN booking_dtl d ON m.booking_mst_xid =d.booking_mst_xid WHERE 1=1 {FILTE
         /// </summary>
         /// <param name="req">string array order_mid</param>
         /// <returns></returns>
-        public OrderMstModel QueryBookingMst(string order_mid)
+        public OrderMstModel QueryBookingMst(string order_mid,string request_uuid="")
         {
             try
             {
@@ -186,7 +186,7 @@ FROM booking_mst m WHERE m.booking_mst_order_status='GL' AND m.order_mid=:order_
             }
             catch(Exception ex)
             {
-                Website.Instance.logger.Fatal($"OrderRepos QueryBookingMst Exception: Message={ex.Message}, StackTrace={ex.StackTrace}");
+                Website.Instance.logger.Fatal($"OrderRepos QueryBookingMst Exception: Message={ex.Message}, StackTrace={ex.StackTrace}", request_uuid);
                 throw ex;
             }
         }

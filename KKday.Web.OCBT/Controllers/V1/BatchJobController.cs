@@ -57,7 +57,7 @@ namespace KKday.Web.OCBT.V1
             }
             catch (Exception ex)
             {
-                Website.Instance.logger.Fatal($"ComboBooking_DoChkParentOrder_exception:GuidKey={guidKey}, Message={ex.Message}, StackTrace={ex.StackTrace}", guidKey);
+                Website.Instance.logger.Fatal($"ComboBooking_DoChkParentOrder_exception:Message={ex.Message}, StackTrace={ex.StackTrace}", guidKey);
 
             }
         }
