@@ -62,46 +62,43 @@ group by a.booking_mst_xid,a.order_mid,a.go_date,a.booking_mst_order_status,a.bo
 
                 foreach (ParentOrderModel parent in orderLst)
                 {
+                    Website.Instance.logger.Info($"SetParentBack:oder_mid={parent.order_mid}",guidKey);
+
                     relastionMappingResModel mapping = _comboBookingRepos.GetMappingOrderList(parent.order_mid);
                     if (mapping.content.result == "0000")
                     {
                         List<string> orderMid = new List<string>(); orderMid.Add(parent.order_mid);
                      
-                        relastionMappingOrderListResModel mappingParent = mapping.content.orderList.Where(x => x.parent == true).Select(x=>x).ToList().FirstOrDefault();
+                        relastionMappingOrderListResModel mappingParent = mapping.content.orderList.Where(x => x.parent == true).Select(x=>x)?.ToList()?.FirstOrDefault();
 
                         //如果母單CX & BACK , 直接壓 is_need_back =false // 表示不再確認，並留註記
                         //如果母單GO 要判斷是否子單相同，都以子單的為主，
                         //(1)子單只要是 CX + 其他BACK 就回壓BACK , is_back=true 並留註記
                         //(2)全CX 就直接壓 is_need_back =false // 表示不再確認，並留註記
-                        if (mappingParent.orderStatus == "BACK" || mappingParent.orderStatus == "CX")
+                        if (mappingParent != null)
                         {
-                            this.UdpIsNeedBack(guidKey, parent.booking_mst_xid, false);
-                        }
-                        else if (mappingParent.orderStatus == "GO")
-                        {
-                            if (mapping.content.orderList.Where(x => x.parent == false && x.orderStatus == "GO")?.Count() > 1)
+                            Website.Instance.logger.Info($"SetParentBack mappingParent ok parent.order_mid={parent.order_mid} mappingParent.orderStatus={mappingParent?.orderStatus}", guidKey);
+                            if (mappingParent?.orderStatus == "BACK" || mappingParent?.orderStatus == "CX")
                             {
-                                //有GO不做事
-                            }
-                            else if (mapping.content.orderList.Where(x => x.parent == false && x.orderStatus == "CX")?.Count() == mapping.content.orderList.Count - 1)
-                            {
-                                //子單全CX
                                 this.UdpIsNeedBack(guidKey, parent.booking_mst_xid, false);
                             }
-                            else if (mapping.content.orderList.Where(x => x.parent == false && x.orderStatus == "BACK")?.Count() == mapping.content.orderList.Count - 1)
+                            else if (mappingParent?.orderStatus == "GO")
                             {
-                                //CALL JAVA SET BACK
-                                if (this.ParentStatusBack(guidKey, orderMid))
-                                {
-                                    this.UdpIsBack(guidKey, parent.booking_mst_xid, true);
-                                }
-                            }
-                            else if (mapping.content.orderList.Where(x => x.parent == false && x.orderStatus == "BACK")?.Count() > 1)
-                            {
-                                //CX +BACK ==TOTAL
+                                var goCount = mapping.content.orderList.Where(x => x.parent == false && x.orderStatus == "GO")?.Count();
                                 var cxCount = mapping.content.orderList.Where(x => x.parent == false && x.orderStatus == "CX")?.Count();
                                 var backCount = mapping.content.orderList.Where(x => x.parent == false && x.orderStatus == "BACK")?.Count();
-                                if ((cxCount + backCount) == mapping.content.orderList.Count - 1)
+                                Website.Instance.logger.Info($"SetParentBack mappingParent ok parent.order_mid={parent.order_mid} child count :go:{goCount},cx:{cxCount},back:{backCount}", guidKey);
+
+                                if (mapping.content.orderList.Where(x => x.parent == false && x.orderStatus == "GO")?.Count() > 1)
+                                {
+                                    //有GO不做事
+                                }
+                                else if (mapping.content.orderList.Where(x => x.parent == false && x.orderStatus == "CX")?.Count() == mapping.content.orderList.Count - 1)
+                                {
+                                    //子單全CX
+                                    this.UdpIsNeedBack(guidKey, parent.booking_mst_xid, false);
+                                }
+                                else if (mapping.content.orderList.Where(x => x.parent == false && x.orderStatus == "BACK")?.Count() == mapping.content.orderList.Count - 1)
                                 {
                                     //CALL JAVA SET BACK
                                     if (this.ParentStatusBack(guidKey, orderMid))
@@ -109,7 +106,24 @@ group by a.booking_mst_xid,a.order_mid,a.go_date,a.booking_mst_order_status,a.bo
                                         this.UdpIsBack(guidKey, parent.booking_mst_xid, true);
                                     }
                                 }
+                                else if (mapping.content.orderList.Where(x => x.parent == false && x.orderStatus == "BACK")?.Count() > 1)
+                                {
+                                    //CX +BACK ==TOTAL
+                                    
+                                    if ((cxCount + backCount) == mapping.content.orderList.Count - 1)
+                                    {
+                                        //CALL JAVA SET BACK
+                                        if (this.ParentStatusBack(guidKey, orderMid))
+                                        {
+                                            this.UdpIsBack(guidKey, parent.booking_mst_xid, true);
+                                        }
+                                    }
+                                }
                             }
+                        }
+                        else
+                        {
+                            Website.Instance.logger.Fatal($"SetParentBack mappingParent null:oder_mid={parent.order_mid}", guidKey);
                         }
                     }
                     else

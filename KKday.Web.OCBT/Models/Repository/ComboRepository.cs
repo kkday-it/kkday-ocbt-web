@@ -387,7 +387,8 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                                     UpdateMstStatus("GL", queueModel.order.orderMid , "SYSTEM");//更新Modify的時間
                                     _redis.Push("ComboBookingVoucher", JsonConvert.SerializeObject(new
                                     {
-                                        master_order_mid = queueModel.order.orderMid
+                                        master_order_mid = queueModel.order.orderMid,
+                                        request_uuid=queueModel.requestUuid
                                     }));//將Java資料傳入redisQueue
 
                                     return;
@@ -900,7 +901,8 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                 }
                 var pushData = new
                 {
-                    master_order_mid = queueModel.order.orderMid
+                    master_order_mid = queueModel.order.orderMid,
+                    request_uuid = queueModel.requestUuid
                 };
                 _redis.Push("ComboBookingVoucher", JsonConvert.SerializeObject(pushData));//將Java資料傳入redisQueue
                 #endregion
