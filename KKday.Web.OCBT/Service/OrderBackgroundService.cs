@@ -38,7 +38,7 @@ namespace KKday.Web.OCBT.Service
         {
             if (Website.Instance.Configuration["Switch"] == "ON")
             {
-                _timer = new Timer(DoWorkAsync, cancellationToken, TimeSpan.Zero, TimeSpan.FromSeconds(30));
+                _timer = new Timer(DoWorkAsync, cancellationToken, TimeSpan.Zero, TimeSpan.FromSeconds(10));
             }
             return Task.CompletedTask;
         }

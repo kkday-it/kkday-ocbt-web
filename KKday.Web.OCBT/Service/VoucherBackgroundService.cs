@@ -39,7 +39,7 @@ namespace KKday.Web.OCBT.Service
             if (Website.Instance.Configuration["Switch"] == "ON")
             {
                 // Get Voucher
-                _timer1 = new Timer(FetchQueue, null, TimeSpan.Zero, TimeSpan.FromSeconds(30));
+                _timer1 = new Timer(FetchQueue, null, TimeSpan.Zero, TimeSpan.FromSeconds(10));
             }
 
             return Task.CompletedTask;
