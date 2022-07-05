@@ -265,7 +265,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                         order_mid = order_mid
                     };
                     var bookingMstData = GetBookingMstData(rq);
-                    isCallBack = bookingMstData != null ? bookingMstData.is_callback : true;
+                    isCallBack = bookingMstData != null ? bookingMstData.is_callback : false;
                 }
                 else
                 {
@@ -387,7 +387,8 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                                     UpdateMstStatus("GL", queueModel.order.orderMid , "SYSTEM");//更新Modify的時間
                                     _redis.Push("ComboBookingVoucher", JsonConvert.SerializeObject(new
                                     {
-                                        master_order_mid = queueModel.order.orderMid
+                                        master_order_mid = queueModel.order.orderMid,
+                                        request_uuid=queueModel.requestUuid
                                     }));//將Java資料傳入redisQueue
 
                                     return;
@@ -438,7 +439,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                         order_mid = queueModel.order?.orderMid,
                         order_oid = queueModel.order.orderOid,
                         prod_oid = (int)queueModel.order.prodOid,
-                        go_date = Convert.ToDateTime(queueModel.order?.begLstGoDt).ToString("yyyyMMdd"),
+                        go_date = string.IsNullOrEmpty(queueModel.order?.begLstGoDt)?"": Convert.ToDateTime(queueModel.order?.begLstGoDt).ToString("yyyyMMdd"),//Convert.ToDateTime(queueModel.order?.begLstGoDt).ToString("yyyyMMdd"),
                         booking_model = JsonConvert.DeserializeObject<Dictionary<string, object>>(JsonConvert.SerializeObject(queueModel)),
                         booking_mst_order_status = "NW",
                         booking_mst_voucher_status = "NW",
@@ -683,7 +684,9 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                         var ProdModel = QueryProduct(prod.prod_oid,
                     FAData.data.FirstOrDefault().fa_vouch_currency, queueModel.order.memberLang, queueModel.order.contactCountryCd);//取得產品資訊與產品版本
                         var PkgModel = QueryPackage(prod.prod_oid, prod.pkg_oid,
-                    FAData.data.FirstOrDefault().fa_vouch_currency, queueModel.order.memberLang, queueModel.order.contactCountryCd, queueModel.order.begLstGoDt, queueModel.order.endLstBackDt);
+                    FAData.data.FirstOrDefault().fa_vouch_currency, queueModel.order.memberLang, queueModel.order.contactCountryCd,
+                    string.IsNullOrEmpty(queueModel.order.begLstGoDt)?DateTime.Now.ToString("yyyy-MM-dd"): queueModel.order.begLstGoDt,
+                    string.IsNullOrEmpty(queueModel.order.endLstBackDt)?DateTime.Now.AddMonths(1).ToString("yyyy-MM-dd"): queueModel.order.endLstBackDt);
                         if (PkgModel.result != "0000")
                         {
                             Website.Instance.logger.Info($"ComboBookingFlow QueryPackage error response={JsonConvert.SerializeObject(PkgModel)}",queueModel.requestUuid);
@@ -900,7 +903,8 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                 }
                 var pushData = new
                 {
-                    master_order_mid = queueModel.order.orderMid
+                    master_order_mid = queueModel.order.orderMid,
+                    request_uuid = queueModel.requestUuid
                 };
                 _redis.Push("ComboBookingVoucher", JsonConvert.SerializeObject(pushData));//將Java資料傳入redisQueue
                 #endregion

@@ -128,7 +128,7 @@ namespace KKday.Web.OCBT.Service
             try
             {
                 // create unique file name for prevent the mess
-                var keyName = Guid.NewGuid().ToString("N") + fileName;
+                var keyName = fileName;
 
                 PutObjectResponse response = null;
 

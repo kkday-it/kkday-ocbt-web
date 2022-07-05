@@ -39,7 +39,7 @@ namespace KKday.Web.OCBT.Service
             if (Website.Instance.Configuration["Switch"] == "ON")
             {
                 // Get Voucher
-                _timer1 = new Timer(FetchQueue, null, TimeSpan.Zero, TimeSpan.FromSeconds(30));
+                _timer1 = new Timer(FetchQueue, null, TimeSpan.Zero, TimeSpan.FromSeconds(10));
             }
 
             return Task.CompletedTask;
@@ -59,7 +59,7 @@ namespace KKday.Web.OCBT.Service
 
                 if (getQueue.HasValue)
                 {
-                    await Task.Run(() => DoWork(JsonConvert.DeserializeObject<QueueModel>(getQueue)?.master_order_mid));
+                    await Task.Run(() => DoWork(JsonConvert.DeserializeObject<QueueModel>(getQueue)?.master_order_mid, JsonConvert.DeserializeObject<QueueModel>(getQueue)?.request_uuid));
                 }
             }
             catch(Exception ex)
@@ -71,25 +71,25 @@ namespace KKday.Web.OCBT.Service
         /// Get Voucher
         /// </summary>
         /// <param name="state"></param>
-        private async void DoWork(string orderMid)
+        private async void DoWork(string orderMid,string request_uuid)
         {
             string guidKey = Guid.NewGuid().ToString();
 
             try
             {
-                Website.Instance.logger.Info($"DoWork Start Voucher: order_mid={orderMid}");
+                Website.Instance.logger.Info($"DoWork Start Voucher: order_mid={orderMid}", request_uuid);
                 // 取出母單
-                var main = _orderRepos.QueryBookingMst(orderMid);
+                var main = _orderRepos.QueryBookingMst(orderMid,request_uuid);
                 if (main == null)
                 {
-                    Website.Instance.logger.Info($"Can not get from booking_mst by {orderMid}!!");
+                    Website.Instance.logger.Info($"Can not get from booking_mst by {orderMid}!!", request_uuid);
                     return;
                 }
-                Website.Instance.logger.Info($"Voucher Get Order Master: {JsonConvert.SerializeObject(main)}");
+                Website.Instance.logger.Info($"Voucher Get Order Master: {JsonConvert.SerializeObject(main)}", request_uuid);
 
                 while (true)
                 {
-                    Website.Instance.logger.Info($"Voucher while do: {JsonConvert.SerializeObject(main.order_mid)}");
+                    Website.Instance.logger.Info($"Voucher while do: {JsonConvert.SerializeObject(main.order_mid)}", request_uuid);
 
                     // 暫定=>沒填 Default 等待20min
                     var deadLine = main.voucher_deadline == 0 ? 20 : main.voucher_deadline;
@@ -98,12 +98,12 @@ namespace KKday.Web.OCBT.Service
                     if (DateTime.Now > voucherDeadline)
                     {
                         // 時間超過後結束回圈，交由排程接手執行
-                        Website.Instance.logger.Info($"Voucher while do timeout order_mid: {main.order_mid}");
+                        Website.Instance.logger.Info($"Voucher while do timeout order_mid: {main.order_mid}", request_uuid);
                         break;
                     }
                     else
                     {
-                        Website.Instance.logger.Info($"Voucher while doing process order_mid: {main.order_mid} main.booking_mst_xid:{main?.booking_mst_xid}");
+                        Website.Instance.logger.Info($"Voucher while doing process order_mid: {main.order_mid} main.booking_mst_xid:{main?.booking_mst_xid}", request_uuid);
                         // 取得所有待處理子單(PROCESS)
                         var subOrders = _orderRepos.QueryBookingDtl(main.booking_mst_xid);
                         // PROCESS + VOUCHER_OK = Total 子單
@@ -113,13 +113,13 @@ namespace KKday.Web.OCBT.Service
 
                         if (processOrders?.Count() > 0)
                         {
-                            Website.Instance.logger.Info($"Voucher while doing process order_mid: {main.order_mid} processOrders.count: {processOrders?.Count()}");
+                            Website.Instance.logger.Info($"Voucher while doing process order_mid: {main.order_mid} processOrders.count: {processOrders?.Count()}", request_uuid);
                             var processOrderMids = processOrders?.Select(x => x.order_mid).ToArray();
                             // Call WMS: 取訂單明細
                             var _processOrderMids = _orderRepos.QueryOrders(processOrderMids);
                             foreach (var sub in _processOrderMids?.order)
                             {
-                                Website.Instance.logger.Info($"Voucher while doing process order_mid: {main.order_mid} sub.order_mid:{sub.orderMid } sub.orderStatus: {sub.orderStatus}");
+                                Website.Instance.logger.Info($"Voucher while doing process order_mid: {main.order_mid} sub.order_mid:{sub.orderMid } sub.orderStatus: {sub.orderStatus}", request_uuid);
                                 if (sub.orderStatus == "GO_OK")
                                 {
                                     // 1. 查詢憑證List
@@ -137,8 +137,8 @@ namespace KKday.Web.OCBT.Service
                                                 byte[] bytes = Convert.FromBase64String(file.file.First().encode_str);
                                                 if (file.file.First().content_type == "application/pdf")
                                                 {
-                                                    
-                                                    var upload = _amazonS3Service.UploadObject(x.file_name, "application/pdf", bytes).Result;
+                                                    var reName = Guid.NewGuid().ToString() + ".pdf"; //重新定義名字
+                                                    var upload = _amazonS3Service.UploadObject(reName, "application/pdf", bytes).Result;
                                                     if (upload.Success) fileInfo.Add(upload.FileName);
                                                 }
                                                 else if (file.file.First().content_type == "image/jpeg" || file.file.First().content_type == "image/jpg" || file.file.First().content_type == "image/png")
@@ -154,9 +154,10 @@ namespace KKday.Web.OCBT.Service
                                                         document.Close();
                                                         byte[] bytesPdf = memoryStream.ToArray();
 
-                                                        string ext = Path.GetExtension(x.file_name);
+                                                        //string ext = Path.GetExtension(x.file_name);
+                                                        var reName = Guid.NewGuid().ToString()+".pdf"; //重新定義名字
 
-                                                        var upload = _amazonS3Service.UploadObject(x.file_name.Replace(ext, ".pdf"), "application/pdf", bytesPdf).Result;
+                                                        var upload = _amazonS3Service.UploadObject(reName, "application/pdf", bytesPdf).Result;
                                                         if (upload.Success) fileInfo.Add(upload.FileName);
 
                                                         memoryStream.Close();
@@ -177,7 +178,7 @@ namespace KKday.Web.OCBT.Service
                                     else
                                     {
                                         // 取無憑證=>紀錄Kinbana Log 
-                                        Website.Instance.logger.Fatal($"Fetch No Voucher MainOrderMid={main.order_mid}, SubOrderMid={sub.orderMid} ");
+                                        Website.Instance.logger.Fatal($"Fetch No Voucher MainOrderMid={main.order_mid}, SubOrderMid={sub.orderMid} ", request_uuid);
                                     }
                                 }
                             }
@@ -247,6 +248,7 @@ namespace KKday.Web.OCBT.Service
         public class QueueModel
         {
             public string master_order_mid { get; set; }
+            public string request_uuid { get; set; }
         }
     }
 }
