@@ -106,7 +106,7 @@ group by a.booking_mst_xid,a.order_mid,a.go_date,a.booking_mst_order_status,a.bo
                                         this.UdpIsBack(guidKey, parent.booking_mst_xid, true);
                                     }
                                 }
-                                else if (mapping.content.orderList.Where(x => x.parent == false && x.orderStatus == "BACK")?.Count() > 1)
+                                else if (mapping.content.orderList.Where(x => x.parent == false && x.orderStatus == "BACK")?.Count() >= 1)
                                 {
                                     //CX +BACK ==TOTAL
                                     
