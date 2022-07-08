@@ -39,15 +39,17 @@ namespace KKday.Web.OCBT.Models.Repository
                 OrderRsModel rs = new OrderRsModel();
 
                 string sqlStmt = @"SELECT DISTINCT m.booking_mst_xid, m.order_mid, m.order_oid, m.booking_mst_order_status, m.booking_mst_voucher_status
---, (case booking_model::text when '{}' then null else booking_model end) as booking_model
---, (case combo_model::text when '{}' then null else combo_model end) as combo_model 
+, (booking_model->>'order')::jsonb->>'prodName' as prod_name
+, ((booking_model->>'order')::jsonb->'packageOid')::int as package_oid
+, (booking_model->>'order')::jsonb->>'pkgName' as package_name
+, ((booking_model->>'order')::jsonb->'orderMasterOid')::int as main_master_oid
 , m.voucher_deadline, m.prod_oid, m.create_user, to_char(m.create_datetime, 'yyyy-mm-dd') as create_datetime FROM booking_mst m
 LEFT JOIN booking_dtl d ON m.booking_mst_xid =d.booking_mst_xid WHERE 1=1 {FILTER}";
                 
                 var _filter = OrderMstFilterParsing(filter, sort, order);
                 sqlStmt = sqlStmt.Replace("{FILTER}", !string.IsNullOrEmpty(_filter.sql) ? _filter.sql : string.Empty);
                 // 相同條件下取出總筆數
-                string sqlCount = $@"SELECT COUNT(c.*) FROM ({sqlStmt}) c";
+                string sqlCount = $@"SELECT COUNT(1) FROM ({sqlStmt}) c";
                 // 最後再加上分頁條件
                 sqlStmt += "\n LIMIT :limit OFFSET :offset";
                 _filter.args.Add("limit", limit);
