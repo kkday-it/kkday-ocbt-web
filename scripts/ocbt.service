@@ -1,0 +1,14 @@
+[Unit]
+Description=OCBT
+After=syslog.target network.target
+[Service]
+WorkingDirectory=/data/web-project/application
+User=www-data
+Group=www-data
+Restart=always
+RestartSec=5
+ExecStart=/usr/bin/dotnet KKday.Web.OCBT.dll urls=http://0.0.0.0:8080
+KillSignal=SIGTERM
+MemoryAccounting=true
+[Install]
+WantedBy=multi-user.target
