@@ -20,6 +20,7 @@ using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using OCBT.Infra.DAL.Migrations;
 using Microsoft.EntityFrameworkCore;
+using System.Threading;
 
 namespace KKday.Web.OCBT
 {
@@ -175,6 +176,9 @@ namespace KKday.Web.OCBT
             //Background Service
             services.AddHostedService<OrderBackgroundService>();
             services.AddHostedService<VoucherBackgroundService>();
+
+            //增加 thread minimum worker
+            ThreadPool.SetMinThreads(workerThreads: 100, completionPortThreads: 100);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
