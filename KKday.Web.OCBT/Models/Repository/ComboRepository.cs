@@ -927,8 +927,9 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
             }
             catch (Exception ex)//跳出錯誤
             {
-                Website.Instance.logger.Info($"ComboBookingFlow error {queue} error:{ex.Message},{ex.StackTrace}");
+                
                 var queueModel = JsonConvert.DeserializeObject<BookingRequestModel>(queue);
+                Website.Instance.logger.Info($"ComboBookingFlow error {queue} error:{ex.Message},{ex.StackTrace}",queueModel.requestUuid);
                 CallBackJava(new RequestJson
                 {
                     orderMid = queueModel?.order?.orderMid,
