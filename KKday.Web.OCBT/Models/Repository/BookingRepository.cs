@@ -34,7 +34,7 @@ namespace KKday.Web.OCBT.Models.Repository
                     contactCountryCd =order.contactCountryCd,
                     lstGoDt=order.begLstGoDt,
                     lstBackDt=order.endLstBackDt,
-                    guideLang=order.memberLang,
+                    guideLang=masterInfo?.content?.order?.guideLang,
                     note="",
                     crtDevice="API",
                     crtBrowser="N",
@@ -261,7 +261,7 @@ namespace KKday.Web.OCBT.Models.Repository
                 contactDataM rs = new contactDataM
                 {
                     moduleType = "OMDL_CONTACT_DATA",
-                    moduleData =JsonConvert.DeserializeObject<moduleData_contactData>(JsonConvert.SerializeObject(orderMasterModule))  
+                    moduleData =JsonConvert.DeserializeObject<moduleData_contactData>(JsonConvert.SerializeObject(orderMasterModule.First()))  
                 };
                 return rs;
             }
@@ -279,7 +279,7 @@ namespace KKday.Web.OCBT.Models.Repository
                 sendDataM rs = new sendDataM
                 {
                     moduleType = "OMDL_SEND_DATA",
-                    moduleData= JsonConvert.DeserializeObject<moduleData_sendData>(JsonConvert.SerializeObject(orderMasterModule))
+                    moduleData= JsonConvert.DeserializeObject<moduleData_sendData>(JsonConvert.SerializeObject(orderMasterModule.First()))
                 };
                 return rs;
             }
@@ -297,7 +297,7 @@ namespace KKday.Web.OCBT.Models.Repository
                 flightInfoDataM rs = new flightInfoDataM
                 {
                     moduleType = "OMDL_FLIGHT_INFO",
-                    moduleData = JsonConvert.DeserializeObject<moduleData_FlightInfo>(JsonConvert.SerializeObject(orderMasterModule))
+                    moduleData = JsonConvert.DeserializeObject<moduleData_FlightInfo>(JsonConvert.SerializeObject(orderMasterModule.First()))
                 };
                 return rs;
             }
@@ -315,7 +315,7 @@ namespace KKday.Web.OCBT.Models.Repository
                 passengerDataM rs = new passengerDataM
                 {
                     moduleType = "OMDL_PSGR_DATA",
-                    moduleData = JsonConvert.DeserializeObject<moduleData_passenger>(JsonConvert.SerializeObject(orderMasterModule))
+                    moduleData = JsonConvert.DeserializeObject<moduleData_passenger>(JsonConvert.SerializeObject(orderMasterModule.First()))
                 };
                 return rs;
             }
@@ -333,7 +333,7 @@ namespace KKday.Web.OCBT.Models.Repository
                 otherDataM rs = new otherDataM
                 {
                     moduleType = "OMDL_OTHER_DATA",
-                    moduleData = JsonConvert.DeserializeObject<moduleData_otherData>(JsonConvert.SerializeObject(orderMasterModule))
+                    moduleData = JsonConvert.DeserializeObject<moduleData_otherData>(JsonConvert.SerializeObject(orderMasterModule.First()))
                 };
                 return rs;
             }

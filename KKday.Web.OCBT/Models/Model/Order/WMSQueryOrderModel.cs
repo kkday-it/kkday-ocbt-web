@@ -64,6 +64,7 @@ namespace KKday.Web.OCBT.Models.Model.Order
         public string orderStatusTxt { get; set; }
         public string lstStatus { get; set; }
         public int? channelOid { get; set; }
+        public string guideLang { get; set; }
         public string cashflowStatus { get; set; }
         public string cancelStatus { get; set; }
         public string cancelTxt { get; set; }
