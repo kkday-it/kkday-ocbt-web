@@ -117,25 +117,21 @@ LEFT JOIN booking_dtl d ON m.booking_mst_xid =d.booking_mst_xid WHERE 1=1 {FILTE
                 if (!string.IsNullOrEmpty(strJson))
                 {
                     var _filter = JsonConvert.DeserializeObject<OrderSearch>(strJson);
+                    // 母單
                     if (_filter.main_prod_oid > 0)
                     {
                         _sql += " AND m.prod_oid = :main_prod_oid";
                         _dynamic.Add("main_prod_oid", _filter.main_prod_oid);
                     }
-                    //if (!string.IsNullOrEmpty(_filter.main_pkg_oid))
-                    //{
-                    //    _sql += " AND m.pkg_oid = :main_pkg_oid";
-                    //    _dynamic.Add("main_pkg_oid", _filter.main_pkg_oid);
-                    //}
+                    if (_filter.main_pkg_oid > 0)
+                    {
+                        _sql += " and ((m.booking_model->>'order')::jsonb->'packageOid')::int = :main_pkg_oid";
+                        _dynamic.Add("main_pkg_oid", _filter.main_pkg_oid);
+                    }
                     if (!string.IsNullOrEmpty(_filter.main_order_mid ))
                     {
                         _sql += " AND m.order_mid = :main_order_mid";
                         _dynamic.Add("main_order_mid", _filter.main_order_mid);
-                    }
-                    if (!string.IsNullOrEmpty(_filter.sub_order_mid ))
-                    {
-                        _sql += " AND d.order_mid = :sub_order_mid";
-                        _dynamic.Add("sub_order_mid", _filter.sub_order_mid);
                     }
                     if (!string.IsNullOrEmpty(_filter.main_order_status))
                     {
@@ -147,7 +143,22 @@ LEFT JOIN booking_dtl d ON m.booking_mst_xid =d.booking_mst_xid WHERE 1=1 {FILTE
                         _sql += " AND m.booking_mst_voucher_status = :main_voucher_status";
                         _dynamic.Add("main_voucher_status", _filter.main_voucher_status);
                     }
-
+                    // 子單
+                    if (_filter.sub_prod_oid > 0)
+                    {
+                        _sql += " AND d.prod_oid =:sub_prod_oid";
+                        _dynamic.Add("sub_prod_oid", _filter.sub_prod_oid);
+                    }
+                    if (_filter.sub_pkg_oid > 0)
+                    {
+                        _sql += " AND d.package_oid =:sub_pkg_oid";
+                        _dynamic.Add("sub_pkg_oid", _filter.sub_pkg_oid);
+                    }
+                    if (!string.IsNullOrEmpty(_filter.sub_order_mid))
+                    {
+                        _sql += " AND d.order_mid = :sub_order_mid";
+                        _dynamic.Add("sub_order_mid", _filter.sub_order_mid);
+                    }
                     if (!string.IsNullOrEmpty(_filter.sub_order_status))
                     {
                         _sql += " AND d.booking_dtl_order_status = :sub_order_status";
