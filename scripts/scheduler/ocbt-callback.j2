@@ -1,0 +1,15 @@
+{
+  "name": "ocbt-callback",
+  "schedule": "0 0,10,20,30,40,50 * * * *",
+  "displayname": "[OCBT] callback",
+  "timezone": "Asia/Taipei",
+  "disabled": false,
+  "tags": {
+    "service": "ocbt:1"
+  },
+  "concurrency": "forbid",
+  "executor": "shell",
+  "executor_config": {
+    "command": "curl -X GET http://localhost/api/v1/BatchJob/CheckCallBack -H 'Host: {{ KK_SERVICE.OCBT_WEB.DOMAIN }}' -H 'Cache-Control: no-cache'"
+  }
+}
