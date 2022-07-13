@@ -328,6 +328,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                 {
                     order_mid = queueModel.order.orderMid
                 });
+                List<BookingDtlModel> insertDtlData = new List<BookingDtlModel>();
                 #endregion
                 #region 判斷母單資訊
                 if (getMstModel != null && getMstModel?.booking_mst_order_status == "GL" && getMstModel?.booking_mst_voucher_status == "GL")//確認不為null與狀態都為GL
@@ -352,7 +353,8 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     {
                         booking_mst_xid = getMstModel.booking_mst_xid
                     });
-                    if (getDtlModel?.Count > 0 && getMstModel.booking_mst_voucher_status != "GL" )
+                    insertDtlData = getDtlModel;
+                    if (getDtlModel?.Count > 0 && getMstModel.booking_mst_voucher_status != "GL" && getDtlModel?.Where(y=>!string.IsNullOrEmpty(y?.order_mid)).Count()>0)
                     {
                         #region call JAVA API 確認子訂單內容是否一致
                         var JavaOrderList = GetMappingOrderList(queueModel.order.orderMid);//取得java訂單明細
@@ -533,7 +535,7 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                     cartorder = new List<Model.CartBooking.ConfirmProdInfoModel>()
                 };
                 var _bookingRepos = _services.GetService<BookingRepository>();
-                List<BookingDtlModel> insertDtlData = new List<BookingDtlModel>();
+
                 //foreach (var skuOid in queueModel.order.lstPrice)//母單中的sku
                 //{
                 //    foreach (var prodDtl in ComboData.data)//取得ComboData.Data中的資訊
@@ -677,6 +679,12 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                 //        }
                 //    }
                 //}
+                bool hasDtl = false;
+                if (insertDtlData.Count>0)
+                {
+                    hasDtl = true;
+                }
+
                 foreach (var prodDtl in ComboData.data)
                 {
                     foreach (var prod in prodDtl.comboInfo.combo_prod)
@@ -831,7 +839,11 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                                 });
                                 tempTotalPrice += (double)skusData.qty * tempPrice;
                             }
-                            insertDtlData.Add(insertdata);
+
+                            if (!hasDtl)
+                            {
+                                insertDtlData.Add(insertdata);
+                            }
                             confirmOrder.total_price = tempTotalPrice;
                             cartBookingValid.cartorder.Add(confirmOrder);
                             bookingModel.currPriceTotal = tempTotalPrice;
@@ -840,7 +852,10 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
                         }
                     }
                 }
-                var dtlcount = InsertBookingDtl(insertDtlData);
+                if (!hasDtl)
+                {
+                    var dtlcount = InsertBookingDtl(insertDtlData);
+                }
                 cartBookingValid.adjprice_flag = true;
                 cartBookingValid.adjprice_type = "01";//允許任意金額
                 cartBookingValid.token = Guid.NewGuid().ToString();//母單的金額
@@ -912,8 +927,9 @@ booking_dtl_order_status=@booking_dtl_order_status,booking_dtl_voucher_status=@b
             }
             catch (Exception ex)//跳出錯誤
             {
-                Website.Instance.logger.Info($"ComboBookingFlow error {queue} error:{ex.Message},{ex.StackTrace}");
+                
                 var queueModel = JsonConvert.DeserializeObject<BookingRequestModel>(queue);
+                Website.Instance.logger.Info($"ComboBookingFlow error {queue} error:{ex.Message},{ex.StackTrace}",queueModel.requestUuid);
                 CallBackJava(new RequestJson
                 {
                     orderMid = queueModel?.order?.orderMid,
