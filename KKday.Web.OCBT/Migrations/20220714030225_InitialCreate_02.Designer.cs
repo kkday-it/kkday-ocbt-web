@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using OCBT.Infra.DAL.Migrations;
@@ -9,9 +10,10 @@ using OCBT.Infra.DAL.Migrations;
 namespace KKday.Web.OCBT.Migrations
 {
     [DbContext(typeof(OCBTContext))]
-    partial class OCBTContextModelSnapshot : ModelSnapshot
+    [Migration("20220714030225_InitialCreate_02")]
+    partial class InitialCreate_02
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

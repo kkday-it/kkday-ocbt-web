@@ -43,6 +43,8 @@ namespace OCBT.Infra.DAL.Migrations
             modelBuilder.Entity<booking_mst>().Property(s => s.modify_user).ForNpgsqlHasComment("修改者");
             modelBuilder.Entity<booking_mst>().Property(s => s.modify_datetime).ForNpgsqlHasComment("修改時間");
 
+            modelBuilder.Entity<booking_mst>().HasIndex(s => s.order_mid).HasName("idx_booking_mst_order_mid");
+            modelBuilder.Entity<booking_mst>().HasIndex(s => s.is_callback).HasName("idx_booking_mst_is_callback");
 
             #endregion
 
@@ -66,7 +68,8 @@ namespace OCBT.Infra.DAL.Migrations
             modelBuilder.Entity<booking_dtl>().Property(s => s.modify_user).ForNpgsqlHasComment("修改者");
             modelBuilder.Entity<booking_dtl>().Property(s => s.modify_datetime).ForNpgsqlHasComment("修改時間");
 
-
+            modelBuilder.Entity<booking_dtl>().HasIndex(s => s.order_mid).HasName("idx_booking_dtl_order_mid");
+            modelBuilder.Entity<booking_dtl>().HasIndex(s => s.booking_mst_xid).HasName("idx_booking_dtl_booking_mst_xid");
             #endregion
 
 
