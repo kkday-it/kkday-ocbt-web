@@ -436,13 +436,13 @@ WHERE booking_mst_xid=:mst_xid ";
 
                         orderMemo = $"{orderMemo}子訂單{request?.orderMid}\r\n";
                         orderMemo = $"{orderMemo}OP已啟動特殊原因取消，請進行退款作業\r\n";
-                        orderMemo = $"{ orderMemo}原因：『‘{request?.modifyReasonCodeTransTW}’ 』{request?.modifyReasonDesc}\r\n";
+                        orderMemo = $"{ orderMemo}原因：『{request?.modifyReasonCodeTransTW}』  { (!string.IsNullOrEmpty(request?.modifyReasonDesc)? "("+request?.modifyReasonDesc+")":"")  }\r\n";
                         //sub_order  21KK219206036
                         //OP has started the special  reason cancellation process , please do the refund operation
                         //Reason：Fraudulent - Voucher Sent
                         orderMemo = $"{orderMemo}sub_order{request?.orderMid}\r\n";
                         orderMemo = $"{orderMemo}OP has started the special  reason cancellation process , please do the refund operation\r\n";
-                        orderMemo = $"{ orderMemo}Reason：『‘{request?.modifyReasonCodeTransEn}’ 』{request?.modifyReasonDesc}\r\n";
+                        orderMemo = $"{ orderMemo}Reason：『{request?.modifyReasonCodeTransEn}』{(!string.IsNullOrEmpty(request?.modifyReasonDesc) ? "(" + request?.modifyReasonDesc + ")" : "")}\r\n";
                     }
                     else if (request?.@event == "PART_REFUND")
                     {
@@ -451,13 +451,13 @@ WHERE booking_mst_xid=:mst_xid ";
                         //原因：『‘’modifyReasonCode’’ 』(『  "modifyReasonDesc"』)  
                         orderMemo = $"{orderMemo}子訂單{request?.orderMid}\r\n";
                         orderMemo = $"{orderMemo}OP已啟動部分退款，請進行退款作業\r\n";
-                        orderMemo = $"{ orderMemo}原因：『‘{request?.modifyReasonCodeTransTW}’ 』{request?.modifyReasonDesc}\r\n";
+                        orderMemo = $"{ orderMemo}原因：『{request?.modifyReasonCodeTransTW}』{(!string.IsNullOrEmpty(request?.modifyReasonDesc) ? "(" + request?.modifyReasonDesc + ")" : "")}\r\n";
                         //sub_order  『 order_mid 』
                         //OP has started a partial refund, please do the refund operation
                         //Reason：『‘’modifyReasonCode’’ 』(『  "modifyReasonDesc"』)
                         orderMemo = $"{orderMemo}sub_order{request?.orderMid}\r\n";
                         orderMemo = $"{orderMemo}OP has started a partial refund, please do the refund operation\r\n";
-                        orderMemo = $"{ orderMemo}Reason：『‘{request?.modifyReasonCodeTransEn}’ 』{request?.modifyReasonDesc}\r\n";
+                        orderMemo = $"{ orderMemo}Reason：『{request?.modifyReasonCodeTransEn}』{(!string.IsNullOrEmpty(request?.modifyReasonDesc) ? "(" + request?.modifyReasonDesc + ")" : "")}\r\n";
                     }
 
                     //呼叫java

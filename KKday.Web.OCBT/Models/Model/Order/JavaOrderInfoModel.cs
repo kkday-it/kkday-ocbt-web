@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
+using static KKday.Web.OCBT.Models.Model.Order.OmdlConverter;
 
 namespace KKday.Web.OCBT.Models.Model.Order
 {
@@ -15,6 +17,7 @@ namespace KKday.Web.OCBT.Models.Model.Order
     public class OrderModuleDataModel
     {
         public string moduleType { get; set; }
+        [JsonConverter(typeof(ModuleDataConverter))]
         public List<ModuleModel> moduleData { get; set; }
 
     }
@@ -305,6 +308,8 @@ namespace KKday.Web.OCBT.Models.Model.Order
         public string telCountryCode { get; set; }
         public string telNumber { get; set; }
     }
+
+    
 
 
     
