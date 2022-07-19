@@ -30,6 +30,7 @@ namespace KKday.Web.OCBT.Models.Model.Order
         public Nationality nationality { get; set; }
         public PassportInfo passport { get; set; }
         public LocalName localName { get; set; }
+        public Weight weight { get; set; }
         public Height height { get; set; }
         public ShoeSize shoeSize { get; set; }
         public Meal meal { get; set; }
@@ -101,11 +102,15 @@ namespace KKday.Web.OCBT.Models.Model.Order
     {
 
     }
+    public class Weight : CommonUnit
+    {
+    }
     public class Height : CommonUnit
     {
     }
     public class ShoeSize : CommonUnit
     {
+        public string type { get; set; }
     }
     public class Meal
     {
@@ -116,6 +121,7 @@ namespace KKday.Web.OCBT.Models.Model.Order
     }
     public class MealType
     {
+        public string type { get; set; }
         public string typeName { get; set; }
     }
     public class FoodAllergy
@@ -198,6 +204,7 @@ namespace KKday.Web.OCBT.Models.Model.Order
     }
     public class AppType
     {
+        public string type { get; set; }
         public string typeName { get; set; }
     }
     #endregion
