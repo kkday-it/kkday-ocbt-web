@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
+using static KKday.Web.OCBT.Models.Model.Order.OmdlConverter;
 
 namespace KKday.Web.OCBT.Models.Model.CartBooking
 {
@@ -422,6 +424,7 @@ namespace KKday.Web.OCBT.Models.Model.CartBooking
     {
 
         public Boolean? haveApp { get; set; } //是否有APP聯絡方式
+        [JsonConverter(typeof(AppDataConverter))]
         public string appType { get; set; } //APP型別
         public string appAccount { get; set; } //APP帳號
     }
@@ -458,6 +461,7 @@ namespace KKday.Web.OCBT.Models.Model.CartBooking
         public heightInfo height { get; set; }
         public weightInfo weight { get; set; }
         public shoeSizeInfo shoeSize { get; set; }
+        
         public mealInfo meal { get; set; }
         public double? glassDiopter { get; set; }
 
@@ -510,6 +514,7 @@ namespace KKday.Web.OCBT.Models.Model.CartBooking
 
     public class mealInfo
     {
+        [JsonConverter(typeof(MealDataConverter))]
         public string mealType { get; set; }
         public string[] excludeFoodType { get; set; }
         public foodAllergyInfo foodAllergy { get; set; }
