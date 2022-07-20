@@ -11,10 +11,10 @@ namespace KKday.Web.OCBT.Models.Model.Order
     public class OrderSearch
     {
         public int? main_prod_oid { get; set; }
-        public string main_pkg_oid { get; set; }
+        public int? main_pkg_oid { get; set; }
         public string main_order_mid { get; set; }
-        public string sub_prod_oid { get; set; }
-        public string sub_pkg_oid { get; set; }
+        public int? sub_prod_oid { get; set; }
+        public int? sub_pkg_oid { get; set; }
         public string sub_order_mid { get; set; }
         public string main_order_status { get; set; }
         public string main_voucher_status { get; set; }
