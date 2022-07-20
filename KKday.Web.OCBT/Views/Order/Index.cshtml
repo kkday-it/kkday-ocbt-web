@@ -72,7 +72,7 @@
                             <th data-field="booking_mst_xid" data-sortable="true">序號</th>
                             <th data-field="order_mid">母單 mid</th>
                             <th data-field="order_oid">母單 oid</th>
-                            <th data-field="main_master_oid">母單 master_oid</th>
+                            @*<th data-field="main_master_oid">母單 master_oid</th>*@
                             <th data-field="booking_mst_order_status">母單訂單狀態</th>
                             <th data-field="booking_mst_voucher_status">母單憑證狀態</th>
                             <th data-field="voucher_deadline">憑證最長等待時間(分鐘)</th>
@@ -111,10 +111,10 @@
                     field: 'order_oid',
                     title: '子單 oid'
                 },
-                {
+                @*{
                     field: 'sub_master_oid',
                     title: '子單 master_oid'
-                },
+                },*@
                 {
                     field: 'booking_dtl_order_status',
                     title: '子單訂單狀態'
@@ -205,10 +205,26 @@
         },
         methods: {
             RefreshHandler() {
-                FetchData(this.$data);
+                if (this.CheckPkgOid()) {
+                     FetchData(this.$data);
+                } else {
+                    alert('產品及套餐編號請輸入數字');
+                }
             },
             ClearHandler() {
                 Object.assign(this.$data, initData());
+            },
+            CheckPkgOid() {
+                var chk = false;
+                var numRe = new RegExp(/^[0-9]*$/);
+                if (this.$data.main_prod_oid != '' || this.$data.sub_prod_oid != '' || this.$data.main_pkg_oid != '' || this.$data.sub_pkg_oid != '') {
+                    if (numRe.test(this.$data.main_prod_oid) && numRe.test(this.$data.sub_prod_oid) && numRe.test(this.$data.main_pkg_oid) && numRe.test(this.$data.sub_pkg_oid)) {
+                        chk = true;
+                    }
+                } else {
+                    chk = true;
+                }
+                return chk;
             }
         }
     });
