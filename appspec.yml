@@ -1,7 +1,7 @@
 version: 0.0
 os: linux
 files:
-  - source: /KKday.Web.OCBT/bin/Release/netcoreapp3.1/publish/
+  - source: /KKday.Web.OCBT/public/
     destination: /data/web-project/application
   - source: /scripts/ocbt.service
     destination: /etc/systemd/system
