@@ -10,6 +10,7 @@ using KKday.Web.OCBT.Proxy;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Npgsql;
+using KKday.Web.OCBT.Models.Model.Product;
 
 namespace KKday.Web.OCBT.Models.Repository
 {
@@ -193,9 +194,10 @@ LEFT JOIN booking_dtl d ON m.booking_mst_xid =d.booking_mst_xid WHERE 1=1 {FILTE
         /// <returns></returns>
         public OrderMstModel QueryBookingMst(string order_mid,string request_uuid="")
         {
+            SqlMapper.AddTypeHandler(typeof(Dictionary<string, object>), new ObjectJsonMapper());
             try
             {
-                string sql = @"SELECT m.booking_mst_xid, m.order_mid, m.voucher_deadline, m.monitor_start_datetime
+                string sql = @"SELECT m.booking_mst_xid, m.order_mid, m.voucher_deadline, m.monitor_start_datetime,combo_model
 FROM booking_mst m WHERE m.booking_mst_order_status='GL' AND m.order_mid=:order_mid AND m.is_callback=false ";
 
                 using (var conn = new NpgsqlConnection(Website.Instance.OCBT_DB))
@@ -213,7 +215,7 @@ FROM booking_mst m WHERE m.booking_mst_order_status='GL' AND m.order_mid=:order_
         {
             try
             {
-                string sql = @"SELECT order_mid, booking_dtl_voucher_status, voucher_file_info
+                string sql = @"SELECT order_mid,package_oid, booking_dtl_voucher_status, voucher_file_info
 FROM booking_dtl WHERE booking_mst_xid=:booking_mst_xid ";
 
                 if (!string.IsNullOrEmpty(booking_dtl_voucher_status)) sql += "\n AND booking_dtl_voucher_status=:booking_dtl_voucher_status";

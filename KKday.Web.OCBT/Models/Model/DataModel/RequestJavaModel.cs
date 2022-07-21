@@ -39,6 +39,7 @@ namespace KKday.Web.OCBT.Models.Model.DataModel
         public List<string> ticket { get; set; }
         public string type { get; set; }
         public string fileExtention { get; set; }
+        public string fileReplaceName { get; set; }
         public string result { get; set; }
     }
     public class ConvertBase64Rq
