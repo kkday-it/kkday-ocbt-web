@@ -12,6 +12,7 @@ using KKday.Web.OCBT.Models.Repository;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using StackExchange.Redis;
+using KKday.Web.OCBT.Models.Model.Product;
 
 namespace KKday.Web.OCBT.Service
 {
@@ -80,6 +81,7 @@ namespace KKday.Web.OCBT.Service
                 Website.Instance.logger.Info($"DoWork Start Voucher: order_mid={orderMid}", request_uuid);
                 // 取出母單
                 var main = _orderRepos.QueryBookingMst(orderMid,request_uuid);
+
                 if (main == null)
                 {
                     Website.Instance.logger.Info($"Can not get from booking_mst by {orderMid}!!", request_uuid);
@@ -192,6 +194,13 @@ namespace KKday.Web.OCBT.Service
                             // 所有子單憑證到齊=>修改母單訂單狀態
                             _orderRepos.UpdateMstVoucherStatus(main.booking_mst_xid, "VOUCHER_OK");
 
+                            ComboDataModel comboData = null;
+                            object ComboDataObj = null;
+                            main?.combo_model?.TryGetValue("data", out ComboDataObj);
+                            if (ComboDataObj != null)
+                            {
+                                comboData = JsonConvert.DeserializeObject<List<ComboDataModel>>(JsonConvert.SerializeObject(main?.combo_model["data"])).FirstOrDefault();
+                            }
                             // CallBackJava Rq
                             var callBackJson = new RequestJson
                             {
@@ -213,6 +222,7 @@ namespace KKday.Web.OCBT.Service
                                 {
                                     kkOrderNo = x.order_mid,
                                     ticket = x.voucher_file_info,
+                                    fileReplaceName= comboData.comboInfo.combo_prod.Where(z=>z.pkg_oid.Equals(x.package_oid.ToString()))?.Select(x=>x.voucher_alias)?.FirstOrDefault(),
                                     type = "URL",
                                     fileExtention = "PDF",
                                     result = "OK"

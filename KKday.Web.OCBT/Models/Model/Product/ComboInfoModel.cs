@@ -23,6 +23,7 @@ namespace KKday.Web.OCBT.Models.Model.Product
         public string pkg_oid { get; set; }
         public string item_oid { get; set; }
         public string supplier_oid { get; set; }
+        public string voucher_alias { get; set; }
         public List<ComboSkusModel> skus { get; set; }
 
     }
